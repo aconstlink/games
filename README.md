@@ -1,2 +1,3 @@
 # games
-Games done with natus
+Some games done with [natus](https://github.com/aconstlink/natus). 
+
