@@ -14,6 +14,7 @@ include( emacs_default_directory )
 natus_emacs_default_directory( "${CMAKE_CURRENT_LIST_DIR}/natus" )
 
 set( subdirs
+    "empty_template"
     "space_intruders"
     )
 
