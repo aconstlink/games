@@ -1,0 +1,3 @@
+[submodule "natus"]
+	path = natus
+	url = https://github.com/aconstlink/natus.git
