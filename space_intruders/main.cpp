@@ -11,6 +11,8 @@
 #include <natus/gfx/camera/pinhole_camera.h>
 #include <natus/gfx/sprite/sprite_render_2d.h>
 #include <natus/gfx/primitive/primitive_render_2d.h>
+#include <natus/gfx/font/text_render_2d.h>
+#include <natus/gfx/util/quad.h>
 
 #include <natus/graphics/variable/variable_set.hpp>
 #include <natus/profiling/macros.h>
@@ -51,13 +53,21 @@ namespace space_intruders
 
         natus::graphics::async_views_t _graphics ;
         natus::gfx::pinhole_camera_t _camera_0 ;
+        natus::gfx::pinhole_camera_t _camera_1 ;
+
         natus::gfx::sprite_render_2d_res_t _sr ;
         natus::gfx::primitive_render_2d_res_t _pr ;
+        natus::gfx::text_render_2d_res_t _tr ;
 
         natus::graphics::state_object_res_t _root_render_states ;
+        natus::graphics::state_object_res_t _fb_render_states ;
+        natus::graphics::framebuffer_object_res_t _fb  ;
 
         natus::math::vec2f_t _screen_target = natus::math::vec2f_t(800, 600) ;
         natus::math::vec2f_t _screen_current = natus::math::vec2f_t( 100, 100 ) ;
+        natus::math::vec2f_t _ratio ;
+
+        natus::gfx::quad_res_t _quad ;
 
     private: // tool/debug
 
@@ -75,9 +85,9 @@ namespace space_intruders
                 { natus::graphics::backend_type::gl3, natus::graphics::backend_type::d3d11}) ;
 
             view1.window().position( 50, 50 ) ;
-            view1.window().resize( 800, 800 ) ;
+            view1.window().resize( 800, 600 ) ;
             view2.window().position( 50 + 800, 50 ) ;
-            view2.window().resize( 800, 800 ) ;
+            view2.window().resize( 800, 600 ) ;
 
             _graphics = natus::graphics::async_views_t( { view1.async(), view2.async() } ) ;
             #elif 0
@@ -95,9 +105,15 @@ namespace space_intruders
         the_game( this_rref_t rhv ) : app( ::std::move( rhv ) ) 
         {
             _camera_0 = std::move( rhv._camera_0 ) ;
+            _camera_1 = std::move( rhv._camera_1 ) ;
             _graphics = std::move( rhv._graphics ) ;
-            _sr = std::move( rhv._sr ) ;
             _db = std::move( rhv._db ) ; 
+
+            _sr = std::move( rhv._sr ) ;
+            _pr = std::move( rhv._pr ) ;
+            _tr = std::move( rhv._tr ) ;
+
+            _fb = std::move( rhv._fb ) ;
         }
         virtual ~the_game( void_t ) 
         {}
@@ -108,9 +124,11 @@ namespace space_intruders
             natus::math::vec2f_t const window = natus::math::vec2f_t( float_t(wei.w), float_t(wei.h) ) ;
             natus::math::vec2f_t const ratio = window / target ;
 
+            _ratio = ratio ;
             _screen_current = target * (ratio.x() < ratio.y() ? ratio.xx() : ratio.yy()) ;
 
-            _camera_0.orthographic( wei.w, wei.h, 0.1f, 1000.0f ) ;
+            _camera_0.orthographic( target.x(), target.y(), 0.1f, 1000.0f ) ;
+            _camera_1.orthographic( window.x(), window.y(), 0.1f, 1000.0f ) ;
 
             return natus::application::result::ok ;
         }
@@ -164,6 +182,10 @@ namespace space_intruders
                     rss.polygon_s.ss.cm = natus::graphics::cull_mode::back ;
                     rss.polygon_s.ss.fm = natus::graphics::fill_mode::fill ;
 
+                    rss.clear_s.do_change = true ;
+                    rss.clear_s.ss.do_activate = true ;
+                    rss.clear_s.ss.do_color_clear = true ;
+                    rss.clear_s.ss.clear_color = natus::math::vec4f_t(0.2f,0.2f,0.2f,1.0f) ;
                    
                     so.add_render_state_set( rss ) ;
                 }
@@ -172,6 +194,43 @@ namespace space_intruders
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
                     a.configure( _root_render_states ) ;
+                } ) ;
+            }
+
+            // root render states
+            {
+                natus::graphics::state_object_t so = natus::graphics::state_object_t(
+                    "fb_render_states" ) ;
+
+                {
+                    natus::graphics::render_state_sets_t rss ;
+
+                    rss.depth_s.do_change = true ;
+                    rss.depth_s.ss.do_activate = false ;
+                    rss.depth_s.ss.do_depth_write = false ;
+
+                    rss.polygon_s.do_change = true ;
+                    rss.polygon_s.ss.do_activate = true ;
+                    rss.polygon_s.ss.ff = natus::graphics::front_face::clock_wise ;
+                    rss.polygon_s.ss.cm = natus::graphics::cull_mode::back ;
+                    rss.polygon_s.ss.fm = natus::graphics::fill_mode::fill ;
+
+                    rss.clear_s.do_change = true ;
+                    rss.clear_s.ss.do_activate = true ;
+                    rss.clear_s.ss.do_color_clear = true ;
+                    rss.clear_s.ss.clear_color = natus::math::vec4f_t(0.0f,0.5f,1.0f,1.0f) ;
+                   
+                    rss.view_s.do_change = true ;
+                    rss.view_s.ss.do_activate = true ;
+                    rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, _screen_target.x(), _screen_target.y() ) ;
+
+                    so.add_render_state_set( rss ) ;
+                }
+
+                _fb_render_states = std::move( so ) ;
+                _graphics.for_each( [&]( natus::graphics::async_view_t a )
+                {
+                    a.configure( _fb_render_states ) ;
                 } ) ;
             }
             
@@ -223,6 +282,63 @@ namespace space_intruders
                 _pr->init( "prim_render", _graphics ) ;
             }
 
+            // import fonts and create text render
+            {
+                natus::property::property_sheet_res_t ps = natus::property::property_sheet_t() ;
+
+                {
+                    natus::font::code_points_t pts ;
+                    for( uint32_t i = 33; i <= 126; ++i ) pts.emplace_back( i ) ;
+                    for( uint32_t i : {uint32_t( 0x00003041 )} ) pts.emplace_back( i ) ;
+                    ps->set_value< natus::font::code_points_t >( "code_points", pts ) ;
+                }
+
+                #if 0
+                {
+                    natus::ntd::vector< natus::io::location_t > locations = 
+                    {
+                        natus::io::location_t("fonts.LCD_Solid.ttf"),
+                        //natus::io::location_t("")
+                    } ;
+                    ps->set_value( "additional_locations", locations ) ;
+                }
+                #endif 
+
+                {
+                    ps->set_value<size_t>( "atlas_width", 512 ) ;
+                    ps->set_value<size_t>( "atlas_height", 512 ) ;
+                    ps->set_value<size_t>( "point_size", 90 ) ;
+                }
+
+                natus::format::module_registry_res_t mod_reg = natus::format::global_t::registry() ;
+                auto fitem = mod_reg->import_from( natus::io::location_t( "fonts.LCD_Solid.ttf" ), _db, ps ) ;
+                natus::format::glyph_atlas_item_res_t ii = fitem.get() ;
+                if( ii.is_valid() )
+                {
+                    _tr = natus::gfx::text_render_2d_res_t( natus::gfx::text_render_2d_t( "text_render", _graphics ) ) ;
+                    _tr->init( std::move( *ii->obj ) ) ;
+                }
+            }
+
+            // framebuffer
+            {
+                _fb = natus::graphics::framebuffer_object_t( "the_scene" ) ;
+                _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 2 )
+                    .resize( _screen_target.x(), _screen_target.y() ) ;
+
+                _graphics.for_each( [&]( natus::graphics::async_view_t a )
+                {
+                    a.configure( _fb ) ;
+                } ) ;
+            }
+
+            // prepare quad
+            {
+                _quad = natus::gfx::quad_res_t( natus::gfx::quad_t("post_map") ) ;
+                _quad->set_texture("the_scene.0") ;
+                _quad->init( _graphics ) ;
+            }
+
             return natus::application::result::ok ; 
         }
 
@@ -269,8 +385,6 @@ namespace space_intruders
 
         virtual natus::application::result on_graphics( natus::application::app_t::render_data_in_t ) 
         { 
-            _pr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
-
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
@@ -278,14 +392,19 @@ namespace space_intruders
                 } ) ;
             }
 
-            
+            // BEGIN : Framebuffer
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( natus::graphics::state_object_t() ) ;
+                    a.use( _fb ) ;
+                    a.use( _fb_render_states ) ;
                 } ) ;
             }
 
+            {
+                _tr->draw_text( 0, 0, 10, natus::math::vec2f_t(0.0f, -0.6f), 
+                    natus::math::vec4f_t(1.0f), "Template" ) ;
+            }
 
             // draw extend of aspect
             if( _draw_debug )
@@ -303,17 +422,44 @@ namespace space_intruders
 
             // render renderer
             {
+                //_sr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
+                _pr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
+                //_tr->set_view_projection( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
+
                 _sr->prepare_for_rendering() ;
                 _pr->prepare_for_rendering() ;
+                _tr->prepare_for_rendering() ;
 
                 for( size_t i=0; i<NUM_LAYERS; ++i )
                 {
                     _sr->render( i ) ;
                     _pr->render( i ) ;
+                    _tr->render( i ) ;
                 }
             }
             
+            // END Framebuffer
+            {
+                _graphics.for_each( [&]( natus::graphics::async_view_t a )
+                {
+                    a.use( natus::graphics::state_object_t() ) ;
+                    a.use( natus::graphics::framebuffer_object_t() ) ;
+                } ) ;
+            }
             
+            {
+                _graphics.for_each( [&]( natus::graphics::async_view_t a )
+                {
+                    a.use( natus::graphics::state_object_t() ) ;
+                } ) ;
+            }
+
+            {
+                _quad->set_view_proj( natus::math::mat4f_t().identity(),  _camera_1.mat_proj() ) ;
+                _quad->set_scale( _screen_current*0.5f ) ;
+                
+                _quad->render( _graphics ) ;
+            }
 
             NATUS_PROFILING_COUNTER_HERE( "Graphics Clock" ) ;
             return natus::application::result::ok ; 
