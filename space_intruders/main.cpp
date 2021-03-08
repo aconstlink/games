@@ -323,7 +323,7 @@ namespace space_intruders
             // framebuffer
             {
                 _fb = natus::graphics::framebuffer_object_t( "the_scene" ) ;
-                _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 2 )
+                _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 1 )
                     .resize( _screen_target.x(), _screen_target.y() ) ;
 
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
@@ -424,7 +424,7 @@ namespace space_intruders
             {
                 //_sr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
                 _pr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
-                //_tr->set_view_projection( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
+                _tr->set_view_projection( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
 
                 _sr->prepare_for_rendering() ;
                 _pr->prepare_for_rendering() ;
