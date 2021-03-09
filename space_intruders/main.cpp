@@ -52,8 +52,8 @@ namespace space_intruders
     private: // graphics
 
         natus::graphics::async_views_t _graphics ;
-        natus::gfx::pinhole_camera_t _camera_0 ;
-        natus::gfx::pinhole_camera_t _camera_1 ;
+        natus::gfx::pinhole_camera_t _camera_0 ; // target
+        natus::gfx::pinhole_camera_t _camera_1 ; // window
 
         natus::gfx::sprite_render_2d_res_t _sr ;
         natus::gfx::primitive_render_2d_res_t _pr ;
@@ -63,7 +63,7 @@ namespace space_intruders
         natus::graphics::state_object_res_t _fb_render_states ;
         natus::graphics::framebuffer_object_res_t _fb  ;
 
-        natus::math::vec2f_t _screen_target = natus::math::vec2f_t(800, 600) ;
+        natus::math::vec2f_t _screen_target = natus::math::vec2f_t(800, 100) ;
         natus::math::vec2f_t _screen_current = natus::math::vec2f_t( 100, 100 ) ;
         natus::math::vec2f_t _ratio ;
 
@@ -85,9 +85,9 @@ namespace space_intruders
                 { natus::graphics::backend_type::gl3, natus::graphics::backend_type::d3d11}) ;
 
             view1.window().position( 50, 50 ) ;
-            view1.window().resize( 800, 600 ) ;
+            view1.window().resize( 800, 100 ) ;
             view2.window().position( 50 + 800, 50 ) ;
-            view2.window().resize( 800, 600 ) ;
+            view2.window().resize( 800, 100 ) ;
 
             _graphics = natus::graphics::async_views_t( { view1.async(), view2.async() } ) ;
             #elif 0
@@ -316,7 +316,7 @@ namespace space_intruders
                 if( ii.is_valid() )
                 {
                     _tr = natus::gfx::text_render_2d_res_t( natus::gfx::text_render_2d_t( "text_render", _graphics ) ) ;
-                    _tr->init( std::move( *ii->obj ) ) ;
+                    _tr->init( std::move( *ii->obj ), NUM_LAYERS ) ;
                 }
             }
 
@@ -402,7 +402,17 @@ namespace space_intruders
             }
 
             {
-                _tr->draw_text( 0, 0, 10, natus::math::vec2f_t(0.0f, -0.6f), 
+                natus::math::vec2f_t p0 =  natus::math::vec2f_t(-0.5f,-0.5f) * natus::math::vec2f_t(10, 90) ;
+                natus::math::vec2f_t p1 =  natus::math::vec2f_t(-0.5f,+0.5f) * natus::math::vec2f_t(10, 90);
+                natus::math::vec2f_t p2 =  natus::math::vec2f_t(+0.5f,+0.5f) * natus::math::vec2f_t(10, 90);
+                natus::math::vec2f_t p3 =  natus::math::vec2f_t(+0.5f,-0.5f) * natus::math::vec2f_t(10, 90);
+                natus::math::vec4f_t color0( 1.0f, 1.0f, 1.0f, 0.0f ) ;
+                natus::math::vec4f_t color1( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                _pr->draw_rect( 50, p0, p1, p2, p3, color0, color1 ) ;
+            }
+
+            {
+                _tr->draw_text( 0, 0, 10, natus::math::vec2f_t(0.0f, -0.0f), 
                     natus::math::vec4f_t(1.0f), "Template" ) ;
             }
 
@@ -417,14 +427,16 @@ namespace space_intruders
                 natus::math::vec4f_t color0( 1.0f, 1.0f, 1.0f, 0.0f ) ;
                 natus::math::vec4f_t color1( 1.0f, 1.0f, 1.0f, 1.0f ) ;
 
-                _pr->draw_rect( 50, p0, p1, p2, p3, color0, color1 ) ;
+                _pr->draw_rect( 10, p0, p1, p2, p3, color0, color1 ) ;
             }
 
             // render renderer
             {
                 //_sr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
                 _pr->set_view_proj( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
-                _tr->set_view_projection( _camera_0.mat_view(), _camera_0.mat_proj() ) ;
+                _tr->set_view_proj( natus::math::mat4f_t().identity(), 
+                    natus::math::mat4f_t().identity().scale_by( 
+                        natus::math::vec4f_t(1.0f, _screen_current.x()/_screen_current.y(), 1.0f, 1.0f) ) ) ;
 
                 _sr->prepare_for_rendering() ;
                 _pr->prepare_for_rendering() ;
