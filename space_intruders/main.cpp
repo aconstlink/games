@@ -70,7 +70,6 @@ namespace space_intruders
 
         typedef std::chrono::high_resolution_clock clock_t ;
 
-
     private: // intruders
 
         struct intruder
@@ -88,7 +87,13 @@ namespace space_intruders
         size_t _intruders_h = 6 ;
 
         natus::ntd::vector< intruder_t > _intruders ;
-        natus::math::vec2f_t offset ;
+        natus::math::vec2f_t _intruders_offset = natus::math::vec2f_t(0.0f, 0.0f) ;
+        natus::math::vec2f_t _intruders_speed = natus::math::vec2f_t( 100.0f, 100.0f ) ;
+
+        natus::math::vec2f_t _intruders_dir = natus::math::vec2f_t( 1.0f, -1.0f ) ;
+
+        std::chrono::milliseconds _intruders_physics_dur = std::chrono::milliseconds( 1000 ) ;
+        clock_t::time_point _intruders_physics_tp ;
 
     private: // ufo
 
@@ -99,11 +104,16 @@ namespace space_intruders
             size_t ufo_id = size_t(-1) ;
             bool_t do_appear = false ;
 
-            float_t pos = 0.0f ;
+            natus::math::vec2f_t pos ;
             
         } ;
 
         ufo _ufo ;
+
+        std::chrono::milliseconds _ufo_physics_dur = std::chrono::milliseconds( 5000 ) ;
+        clock_t::time_point _ufo_physics_tp ;
+        natus::math::vec2f_t _ufo_dir = natus::math::vec2f_t( 1.0f, 0.0f ) ;
+        bool_t _ufo_spawned = false ;
 
     private: // player
 
@@ -126,7 +136,7 @@ namespace space_intruders
     private: // graphics
 
         size_t _anim = 0 ;
-
+        
 
     public:
 
@@ -266,6 +276,10 @@ namespace space_intruders
                 }
             }
 
+            {
+                _intruders_physics_tp = clock_t::now() ;
+                _ufo_physics_tp = clock_t::now() ;
+            }
             return true ;
         }
 
@@ -280,8 +294,48 @@ namespace space_intruders
 
         void_t on_physics( size_t const milli_dt ) noexcept
         {
-            
+            if( (clock_t::now() - _intruders_physics_tp) > _intruders_physics_dur )
+            {
+                _intruders_physics_tp = clock_t::now() ;
 
+                for( auto & intr : _intruders ) 
+                {
+                    intr.pos +=_intruders_dir * natus::math::vec2f_t( 800.0f/20.0f, 0.0f ) ;
+                }
+
+                for( auto & intr : _intruders ) 
+                {
+                    if( (intr.pos.x() > (400.0f - (800.0f/10.0f))) ||
+                        (intr.pos.x() < (-400.0f + (800.0f/10.0f))) )
+                    {
+                        _intruders_dir *= natus::math::vec2f_t( -1.0f, 1.0f ) ;
+                        break ;
+                    }
+                }
+            }
+
+            // ufo
+            {
+                if( !_ufo_spawned && (clock_t::now() - _ufo_physics_tp) > _ufo_physics_dur )
+                {
+                    _ufo_spawned = true ;
+                    if( _ufo_dir.x() < 0.0f ) _ufo.pos = natus::math::vec2f_t( 450.0f, 250.0f ) ; 
+                    else _ufo.pos = natus::math::vec2f_t( -450.0f, 250.0f ) ; 
+                }
+            
+                if( _ufo_spawned )
+                {
+                    float_t const dt = (float_t(milli_dt) / 1000.0f) ;
+                    _ufo.pos += _ufo_dir * natus::math::vec2f_t( 250.0f, 0.0f ) * dt ;
+                    _ufo.pos.x( std::floor(_ufo.pos.x()) ) ;
+                    if( _ufo.pos.x() > 500.0f || _ufo.pos.x() < -500.0f )
+                    {
+                        _ufo_spawned = false ;
+                        _ufo_physics_tp = clock_t::now() ;
+                        _ufo_dir *= natus::math::vec2f_t( -1.0f, 1.0f ) ;
+                    }
+                }
+            }
         }
 
         void_t on_graphics( natus::gfx::sprite_render_2d_res_t sr, sheets_cref_t sheets, size_t const milli_dt ) noexcept
@@ -327,19 +381,17 @@ namespace space_intruders
             }
 
             // ufo
-            if( _ufo.ufo_id != size_t(-1) )
+            if( _ufo_spawned && _ufo.ufo_id != size_t(-1) )
             {
                 size_t const at = _anim % sheets[sheet].animations[_ufo.ufo_id].duration ;
 
-                natus::math::vec2f_t pos( -400.0f, 250.0f ) ;
                 for( auto const & s : sheets[sheet].animations[_ufo.ufo_id].sprites )
                 {
                     if( at >= s.begin && at < s.end )
                     {
                         auto const & rect = sheets[sheet].rects[s.idx] ;
-                        pos += natus::math::vec2f_t( (800.0f/20.0f), 0.0f ) ;
                         sr->draw( 0, 
-                            pos, 
+                            _ufo.pos, 
                             natus::math::mat2f_t().identity(),
                             natus::math::vec2f_t(3000.0f),
                             rect.rect,  
@@ -882,8 +934,9 @@ namespace space_intruders
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_physics( natus::application::app_t::physics_data_in_t ) noexcept
+        virtual natus::application::result on_physics( natus::application::app_t::physics_data_in_t pd ) noexcept
         { 
+            _field.on_physics( pd.micro_dt / 1000 ) ;
             NATUS_PROFILING_COUNTER_HERE( "Physics Clock" ) ;
             return natus::application::result::ok ; 
         }
@@ -1032,6 +1085,9 @@ namespace space_intruders
 
             ImGui::Begin( "do something" ) ;
             ImGui::End() ;
+
+            bool_t tmp = true ;
+            ImGui::ShowDemoWindow( &tmp ) ;
             return natus::application::result::ok ;
         }
 
