@@ -1,0 +1,52 @@
+
+<natus>
+    <project>
+    </project>
+
+    <sprite_sheets ref="" />
+    <sprite_sheets>
+
+        <sprite_sheet name="space_intruders">
+
+            <image src="images/space_intruders.png" />
+            <sprites>
+                <sprite name="intr_0_move_0">
+                    <animation rect="51 788 59 795" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_0_move_1">
+                    <animation rect="67 789 75 795" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+            </sprites>
+
+            <animations>
+                <animation name="intr_0_move">
+                    <frame sprite="intr_0_move_0" duration="1000" />
+                    <frame sprite="intr_0_move_1" duration="1000" />
+                </animation>
+            </animations>
+
+        </sprite_sheet>
+
+    </sprite_sheets>
+
+    <!-- allow to compose different sprite animatoins
+         from different sprite sheets -->
+    <sprite_compositions>
+        <composition>
+            <animation sprite_sheet="" name="">
+                <origin value="" />
+                <!-- transformations animation -->
+            </animation>
+        </composition>
+    </sprite_compositions>
+
+</natus>
