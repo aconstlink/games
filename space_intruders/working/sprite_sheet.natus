@@ -25,12 +25,241 @@
                         <hit name="head" rect="0 0 10 10" />
                     </hits>
                 </sprite>
+
+                <sprite name="intr_1_move_0">
+                    <animation rect="51 774 59 779" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_1_move_1">
+                    <animation rect="67 774 75 779" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_2_move_0">
+                    <animation rect="51 757 59 762" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_2_move_1">
+                    <animation rect="68 755 76 762" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_3_move_0">
+                    <animation rect="51 739 59 748" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_3_move_1">
+                    <animation rect="68 739 76 748" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_4_move_0">
+                    <animation rect="51 724 59 732" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_4_move_1">
+                    <animation rect="67 722 77 733" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_5_move_0">
+                    <animation rect="51 707 59 716" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="intr_5_move_1">
+                    <animation rect="68 707 76 716" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="ufo_move_0">
+                    <animation rect="49 693 61 699" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="ufo_move_1">
+                    <animation rect="66 693 78 699" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_0_0">
+                    <animation rect="152 790 152 792" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_0_1">
+                    <animation rect="168 790 169 792" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_1_0">
+                    <animation rect="151 774 153 777" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_1_1">
+                    <animation rect="168 774 170 777" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_2_0">
+                    <animation rect="151 759 153 761" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_2_1">
+                    <animation rect="151 759 153 761" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_3_0">
+                    <animation rect="151 742 153 745" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="projectile_3_1">
+                    <animation rect="151 742 153 745" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="player_0">
+                    <animation rect="149 706 155 716" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="defense_0">
+                    <animation rect="148 690 156 699" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
             </sprites>
 
             <animations>
                 <animation name="intr_0_move">
                     <frame sprite="intr_0_move_0" duration="1000" />
                     <frame sprite="intr_0_move_1" duration="1000" />
+                </animation>
+                <animation name="intr_1_move">
+                    <frame sprite="intr_1_move_0" duration="1000" />
+                    <frame sprite="intr_1_move_1" duration="1000" />
+                </animation>
+                <animation name="intr_2_move">
+                    <frame sprite="intr_2_move_0" duration="1000" />
+                    <frame sprite="intr_2_move_1" duration="1000" />
+                </animation>
+                <animation name="intr_3_move">
+                    <frame sprite="intr_3_move_0" duration="1000" />
+                    <frame sprite="intr_3_move_1" duration="1000" />
+                </animation>
+                <animation name="intr_4_move">
+                    <frame sprite="intr_4_move_0" duration="1000" />
+                    <frame sprite="intr_4_move_1" duration="1000" />
+                </animation>
+                <animation name="intr_5_move">
+                    <frame sprite="intr_5_move_0" duration="1000" />
+                    <frame sprite="intr_5_move_1" duration="1000" />
+                </animation>
+                <animation name="intr_6_move">
+                    <frame sprite="intr_6_move_0" duration="1000" />
+                    <frame sprite="intr_6_move_1" duration="1000" />
+                </animation>
+                <animation name="projectile_0">
+                    <frame sprite="projectile_0_0" duration="1000" />
+                    <frame sprite="projectile_0_1" duration="1000" />
+                </animation>
+                <animation name="projectile_1">
+                    <frame sprite="projectile_1_0" duration="1000" />
+                    <frame sprite="projectile_1_1" duration="1000" />
+                </animation>
+                <animation name="projectile_2">
+                    <frame sprite="projectile_2_0" duration="1000" />
+                    <frame sprite="projectile_2_1" duration="1000" />
+                </animation>
+                <animation name="projectile_3">
+                    <frame sprite="projectile_3_0" duration="1000" />
+                    <frame sprite="projectile_3_1" duration="1000" />
+                </animation>
+                <animation name="player">
+                    <frame sprite="player_0" duration="1000" />
+                    <frame sprite="player_0" duration="1000" />
+                </animation>
+                <animation name="defense">
+                    <frame sprite="defense_0" duration="1000" />
+                    <frame sprite="defense_0" duration="1000" />
+                </animation>
+                <animation name="ufo_move">
+                    <frame sprite="ufo_move_0" duration="1000" />
+                    <frame sprite="ufo_move_1" duration="1000" />
                 </animation>
             </animations>
 

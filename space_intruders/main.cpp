@@ -1,5 +1,4 @@
 
-
 #include <natus/application/global.h>
 #include <natus/application/app.h>
 
@@ -50,6 +49,7 @@ namespace space_intruders
                 size_t end ;
             };
             size_t duration ;
+            natus::ntd::string_t name ;
             natus::ntd::vector< sprite > sprites ;
 
         };
@@ -62,19 +62,25 @@ namespace space_intruders
         };
         natus::ntd::vector< sprite > rects ;
     };
-    natus_typedefs( natus::ntd::vector< sprite_sheet >, sheets ) ;
+    natus_res_typedefs( natus::ntd::vector< sprite_sheet >, sheets ) ;
 
     class field
     {
         natus_this_typedefs( field ) ;
 
-        
+        typedef std::chrono::high_resolution_clock clock_t ;
 
-    private: 
+
+    private: // intruders
 
         struct intruder
         {
+            size_t ani_id = size_t( -1 ) ;
             bool_t life = true ;
+
+            natus::math::vec2f_t pos ;
+            float_t scale = 3000.0f ;
+            natus::math::vec4f_t rect ;
         };
         natus_typedef( intruder ) ;
 
@@ -82,16 +88,58 @@ namespace space_intruders
         size_t _intruders_h = 6 ;
 
         natus::ntd::vector< intruder_t > _intruders ;
-        
+        natus::math::vec2f_t offset ;
+
+    private: // ufo
+
+        struct ufo
+        {
+            clock_t::time_point tp ;
+            std::chrono::milliseconds dur = std::chrono::milliseconds(10000) ;
+            size_t ufo_id = size_t(-1) ;
+            bool_t do_appear = false ;
+
+            float_t pos = 0.0f ;
+            
+        } ;
+
+        ufo _ufo ;
+
+    private: // player
+
+        struct player
+        {
+            size_t num_lifes = 3 ;
+        } ;
+
+        size_t _player_id = size_t(-1) ;
+
+    private: // defense
+
+        struct defense
+        {
+            size_t hits = 0 ;
+        } ;
+
+        size_t _defense_id = size_t(-1) ;
+
     private: // graphics
 
         size_t _anim = 0 ;
+
+
+    public:
+
+        struct init_data
+        {
+            sheets_res_t sheets ;
+        };
+        natus_typedef( init_data ) ;
 
     public: // ctors
 
         field( void_t ) noexcept
         {
-            _intruders.resize( _intruders_w * _intruders_h ) ;
         }
 
         field( this_cref_t ) = delete ;
@@ -114,44 +162,244 @@ namespace space_intruders
 
     public: // functions
 
+        bool_t on_init( init_data_rref_t d ) noexcept
+        {
+            auto const & sheets = *d.sheets ;
+            if( sheets.size() == 0 ) return false ;
+
+            auto const & sheet = sheets[0] ;
+
+            // intruders
+            {
+                natus::ntd::vector< natus::ntd::string_t > names = 
+                { "intr_5_move", "intr_4_move", "intr_3_move", "intr_2_move", "intr_1_move", "intr_0_move" } ;
+                
+                for( auto const & name : names )
+                {
+                    this_t::intruder_t intr ;
+
+                    auto const iter = std::find_if( sheet.animations.begin(), sheet.animations.end(), 
+                        [&]( space_intruders::sprite_sheet::animation const & a )
+                    {
+                        return a.name == name ;
+                    } ) ;
+                    if( iter == sheet.animations.end() )
+                    {
+                        natus::log::global_t::error( "Can not find animation [" + name + "]. Taking 0" ) ;
+                        for( size_t i=0; i<_intruders_w; ++i )
+                            _intruders.emplace_back( intr ) ;
+                        continue ;
+                    }
+                    intr.ani_id = std::distance( sheet.animations.begin(), iter ) ;
+                    for( size_t i=0; i<_intruders_w; ++i )
+                        _intruders.emplace_back( intr) ;
+                }
+
+                // init positions
+                {
+                    auto const start = natus::math::vec2f_t( -350.0f, 200.0f ) ;
+                    for( size_t i=0; i<_intruders.size(); ++i )
+                    {
+                        size_t const y = i / _intruders_w ;
+                        size_t const x = i % _intruders_w ;
+
+                        auto & intr = _intruders[i] ;
+                        intr.pos = start + natus::math::vec2f_t( 
+                            float_t(x) * (800.0f/20.0f), 
+                            -float_t(y) * (600.0f/10.0f) ) ;
+                    }
+                }
+            }
+
+            // ufo
+            {
+                natus::ntd::string_t name = "ufo_move" ;
+                auto const iter = std::find_if( sheet.animations.begin(), sheet.animations.end(), 
+                    [&]( space_intruders::sprite_sheet::animation const & a )
+                {
+                    return a.name == name ;
+                } ) ;
+                if( iter == sheet.animations.end() )
+                {
+                    natus::log::global_t::error( "Can not find animation [" + name + "]. Taking 0" ) ;
+                }
+                else
+                {
+                    _ufo.ufo_id = std::distance( sheet.animations.begin(), iter ) ;
+                }
+                _ufo.tp = clock_t::now() ;
+            }
+
+            // player
+            {
+                natus::ntd::string_t name = "player" ;
+                auto const iter = std::find_if( sheet.animations.begin(), sheet.animations.end(), 
+                    [&]( space_intruders::sprite_sheet::animation const & a )
+                {
+                    return a.name == name ;
+                } ) ;
+                if( iter == sheet.animations.end() )
+                {
+                    natus::log::global_t::error( "Can not find animation [" + name + "]. Taking 0" ) ;
+                }
+                else
+                {
+                    _player_id = std::distance( sheet.animations.begin(), iter ) ;
+                }
+            }
+
+            // defense
+            {
+                natus::ntd::string_t name = "defense" ;
+                auto const iter = std::find_if( sheet.animations.begin(), sheet.animations.end(), 
+                    [&]( space_intruders::sprite_sheet::animation const & a )
+                {
+                    return a.name == name ;
+                } ) ;
+                if( iter == sheet.animations.end() )
+                {
+                    natus::log::global_t::error( "Can not find animation [" + name + "]. Taking 0" ) ;
+                }
+                else
+                {
+                    _defense_id = std::distance( sheet.animations.begin(), iter ) ;
+                }
+            }
+
+            return true ;
+        }
+
         void_t on_update( void_t ) noexcept
+        {
+            //auto const dt = std::chrono::milliseconds( milli_dt ) ;
+        }
+
+        void_t on_device( void_t ) noexcept
         {
         }
 
-        void_t on_physics( void_t ) noexcept
+        void_t on_physics( size_t const milli_dt ) noexcept
         {
+            
+
         }
 
         void_t on_graphics( natus::gfx::sprite_render_2d_res_t sr, sheets_cref_t sheets, size_t const milli_dt ) noexcept
         {
-            natus::math::vec2f_t pos( -400.0f, 200.0f ) ;
-
-            for( size_t y=0; y<_intruders_h; ++y )
+            size_t const sheet = 0 ;
+            
+            // intruders
             {
-                for( size_t x=0; x<_intruders_w; ++x )
-                {
-                    size_t const sheet = 0 ;
-                    size_t const ani = 0 ;
+                natus::math::vec4f_t colors[6] = {
+                    natus::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ), 
+                    natus::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ), 
+                    natus::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ),
+                    natus::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ), 
+                    natus::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ), 
+                    natus::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) 
+                } ;
 
-                    size_t const at = _anim % sheets[sheet].animations[ani].duration ;
-                    for( auto const & s : sheets[sheet].animations[ani].sprites )
+                for( size_t y=0; y<_intruders_h; ++y )
+                {
+                    for( size_t x=0; x<_intruders_w; ++x )
+                    {
+                        size_t const idx = y * _intruders_w + x ;
+                        auto const & intr = _intruders[ idx ] ;
+
+                        size_t const at = _anim % sheets[sheet].animations[intr.ani_id].duration ;
+                        for( auto const & s : sheets[sheet].animations[intr.ani_id].sprites )
+                        {
+                            if( at >= s.begin && at < s.end )
+                            {
+                                auto const & rect = sheets[sheet].rects[s.idx] ;
+                                sr->draw( 0, 
+                                    intr.pos, 
+                                    natus::math::mat2f_t().identity(),
+                                    natus::math::vec2f_t(3000.0f),
+                                    rect.rect,  
+                                    sheet, rect.pivot, 
+                                    colors[5 - (intr.ani_id % 6)] ) ;
+                                break ;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ufo
+            if( _ufo.ufo_id != size_t(-1) )
+            {
+                size_t const at = _anim % sheets[sheet].animations[_ufo.ufo_id].duration ;
+
+                natus::math::vec2f_t pos( -400.0f, 250.0f ) ;
+                for( auto const & s : sheets[sheet].animations[_ufo.ufo_id].sprites )
+                {
+                    if( at >= s.begin && at < s.end )
+                    {
+                        auto const & rect = sheets[sheet].rects[s.idx] ;
+                        pos += natus::math::vec2f_t( (800.0f/20.0f), 0.0f ) ;
+                        sr->draw( 0, 
+                            pos, 
+                            natus::math::mat2f_t().identity(),
+                            natus::math::vec2f_t(3000.0f),
+                            rect.rect,  
+                            sheet, rect.pivot, 
+                            natus::math::vec4f_t(1.0f) ) ;
+                        break ;
+                    }
+                }
+            }
+
+            // player
+            if( _player_id != size_t(-1) )
+            {
+                size_t const at = _anim % sheets[sheet].animations[_player_id].duration ;
+
+                natus::math::vec2f_t pos( -400.0f, -250.0f ) ;
+                for( auto const & s : sheets[sheet].animations[_player_id].sprites )
+                {
+                    if( at >= s.begin && at < s.end )
+                    {
+                        auto const & rect = sheets[sheet].rects[s.idx] ;
+                        pos += natus::math::vec2f_t( (800.0f/20.0f), 0.0f ) ;
+                        sr->draw( 0, 
+                            pos, 
+                            natus::math::mat2f_t().identity(),
+                            natus::math::vec2f_t(1500.0f),
+                            rect.rect,  
+                            sheet, rect.pivot, 
+                            natus::math::vec4f_t(1.0f) ) ;
+                        break ;
+                    }
+                }
+            }
+
+            // defense
+            if( _defense_id != size_t(-1) )
+            {
+                size_t const at = _anim % sheets[sheet].animations[_defense_id].duration ;
+
+                natus::math::vec2f_t pos( -300.0f, -200.0f ) ;
+                for( size_t i=0; i<6; ++i )
+                {
+                    for( auto const & s : sheets[sheet].animations[_defense_id].sprites )
                     {
                         if( at >= s.begin && at < s.end )
                         {
                             auto const & rect = sheets[sheet].rects[s.idx] ;
-                            pos += natus::math::vec2f_t( (800.0f/20.0f), 0.0f ) ;
                             sr->draw( 0, 
                                 pos, 
                                 natus::math::mat2f_t().identity(),
-                                natus::math::vec2f_t(3000.0f),
+                                natus::math::vec2f_t(2500.0f),
                                 rect.rect,  
                                 sheet, rect.pivot, 
                                 natus::math::vec4f_t(1.0f) ) ;
                             break ;
                         }
                     }
+
+                    pos += natus::math::vec2f_t( 800.0f/7.0f, 0.0f ) ;
                 }
-                pos = natus::math::vec2f_t( -400.0f, pos.y() - (600.0f/10.0f) ) ;
             }
 
             _anim += milli_dt ;
@@ -201,7 +449,7 @@ namespace space_intruders
     private: // sprite tool
 
         natus::tool::sprite_editor_res_t _se ;
-        sheets_t _sheets ;
+        sheets_res_t _sheets ;
 
     private: // game
 
@@ -271,7 +519,7 @@ namespace space_intruders
 
             #if 1
             _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 1 )
-                .resize( _screen_current.x(), _screen_current.y() ) ;
+                .resize( size_t(_screen_current.x()), size_t(_screen_current.y()) ) ;
 
             _graphics.for_each( [&]( natus::graphics::async_view_t a )
             {
@@ -280,7 +528,7 @@ namespace space_intruders
 
             _fb_render_states->access_render_state( 0, [&]( natus::graphics::render_state_sets_ref_t rss)
             {
-                rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, _screen_current.x(), _screen_current.y() ) ;
+                rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, size_t(_screen_current.x()), size_t(_screen_current.y()) ) ;
             } ) ;
             
             _graphics.for_each( [&]( natus::graphics::async_view_t a )
@@ -377,11 +625,12 @@ namespace space_intruders
                     rss.clear_s.do_change = true ;
                     rss.clear_s.ss.do_activate = true ;
                     rss.clear_s.ss.do_color_clear = true ;
-                    rss.clear_s.ss.clear_color = natus::math::vec4f_t(0.0f,0.5f,1.0f,1.0f) ;
+                    rss.clear_s.ss.clear_color = natus::math::vec4f_t(0.0f,0.1f,0.1f,1.0f) ;
                    
                     rss.view_s.do_change = true ;
                     rss.view_s.ss.do_activate = true ;
-                    rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, _screen_target.x(), _screen_target.y() ) ;
+                    rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, uint_t(_screen_target.x()), 
+                        uint_t(_screen_target.y()) ) ;
 
                     so.add_render_state_set( rss ) ;
                 }
@@ -395,6 +644,8 @@ namespace space_intruders
             
             // import natus file
             {
+                _sheets = space_intruders::sheets_t() ;
+
                 natus::format::module_registry_res_t mod_reg = natus::format::global_t::registry() ;
                 auto item = mod_reg->import_from( natus::io::location_t( "sprite_sheet.natus" ), _db ) ;
 
@@ -425,7 +676,7 @@ namespace space_intruders
                             }
 
                             sprite_sheet ss ;
-                            _sheets.emplace_back( ss ) ;
+                            _sheets->emplace_back( ss ) ;
                         }
                     }
 
@@ -438,13 +689,13 @@ namespace space_intruders
                         size_t i=0 ;
                         for( auto const & ss : doc.sprite_sheets )
                         {
-                            auto & sheet = _sheets[i++] ;
+                            auto & sheet = (*_sheets)[i++] ;
 
                             for( auto const & s : ss.sprites )
                             {
                                 natus::math::vec4f_t const rect = 
                                     (natus::math::vec4f_t( s.animation.rect ) + 
-                                        natus::math::vec4f_t(0.5f,0.5f, 0.5f, 0.5f))/ 
+                                        natus::math::vec4f_t(0.0f,0.0f, 1.0f, 1.0f))/ 
                                     natus::math::vec4f_t( dims.xy(), dims.xy() )  ;
 
                                 natus::math::vec2f_t const pivot =
@@ -457,7 +708,6 @@ namespace space_intruders
 
                                 sheet.rects.emplace_back( s_ ) ;
                             }
-
 
                             for( auto const & a : ss.animations )
                             {
@@ -486,6 +736,7 @@ namespace space_intruders
                                     tp = s_.end ;
                                 }
                                 a_.duration = tp ;
+                                a_.name = a.name ;
                                 sheet.animations.emplace_back( std::move( a_ ) ) ;
                             }
                         }
@@ -560,7 +811,7 @@ namespace space_intruders
             {
                 _fb = natus::graphics::framebuffer_object_t( "the_scene" ) ;
                 _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 1 )
-                    .resize( _screen_target.x(), _screen_target.y() ) ;
+                    .resize( size_t(_screen_target.x()), size_t(_screen_target.y()) ) ;
 
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
@@ -582,6 +833,15 @@ namespace space_intruders
                 //_se->add_sprite_sheet( "player", natus::io::location_t( "images.Paper-Pixels-8x8.Player.png" ) ) ;
                 //_se->add_sprite_sheet( "tiles", natus::io::location_t( "images.Paper-Pixels-8x8.Tiles.png" ) ) ;
                 
+            }
+
+
+            // should come last
+            // field data
+            {
+                space_intruders::field_t::init_data_t field_init_data ;
+                field_init_data.sheets = _sheets  ;
+                _field.on_init( std::move( field_init_data ) ) ;
             }
 
             return natus::application::result::ok ; 
@@ -610,9 +870,9 @@ namespace space_intruders
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_update( natus::application::app_t::update_data_in_t ) 
+        virtual natus::application::result on_logic( logic_data_in_t ) noexcept 
         { 
-            NATUS_PROFILING_COUNTER_HERE( "Update Clock" ) ;
+            NATUS_PROFILING_COUNTER_HERE( "Logic Clock" ) ;
             return natus::application::result::ok ; 
         }
 
@@ -646,6 +906,7 @@ namespace space_intruders
                 } ) ;
             }
 
+            #if 0 // test rect
             {
                 auto const p0 =  natus::math::vec2f_t(-0.5f,-0.5f) * natus::math::vec2f_t(10, 90) + natus::math::vec2f_t(-400,0) ;
                 auto const p1 =  natus::math::vec2f_t(-0.5f,+0.5f) * natus::math::vec2f_t(10, 90) + natus::math::vec2f_t(-400,0) ;
@@ -655,9 +916,10 @@ namespace space_intruders
                 natus::math::vec4f_t color1( 1.0f, 1.0f, 1.0f, 1.0f ) ;
                 _pr->draw_rect( 50, p0, p1, p2, p3, color0, color1 ) ;
             }
+            #endif
 
             {
-                _tr->draw_text( 0, 0, 10, natus::math::vec2f_t(0.0f, -0.5f), 
+                _tr->draw_text( 0, 0, 10, natus::math::vec2f_t(-.2f, 0.7f), 
                     natus::math::vec4f_t(1.0f), "space intruders" ) ;
             }
 
@@ -691,7 +953,7 @@ namespace space_intruders
             #endif
 
             {
-                _field.on_graphics( _sr, _sheets, rdi.milli_dt ) ;
+                _field.on_graphics( _sr, *_sheets, rdi.milli_dt ) ;
             }
 
             // draw extend of aspect
