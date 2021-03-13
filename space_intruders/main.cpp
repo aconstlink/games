@@ -9,7 +9,13 @@
 #include <natus/format/natus/natus_module.h>
 #include <natus/io/database.h>
 
+#include <natus/device/layouts/xbox_controller.hpp>
+#include <natus/device/layouts/game_controller.hpp>
+#include <natus/device/layouts/ascii_keyboard.hpp>
+#include <natus/device/layouts/three_mouse.hpp>
+#include <natus/device/mapping.hpp>
 #include <natus/device/global.h>
+
 #include <natus/gfx/camera/pinhole_camera.h>
 #include <natus/gfx/sprite/sprite_render_2d.h>
 #include <natus/gfx/primitive/primitive_render_2d.h>
@@ -119,10 +125,14 @@ namespace space_intruders
 
         struct player
         {
+            size_t ani_id = size_t(-1) ;
             size_t num_lifes = 3 ;
-        } ;
+            natus::math::vec2f_t pos ;
 
-        size_t _player_id = size_t(-1) ;
+            natus::math::vec2f_t adv ;
+        } ;
+        player _player ;
+        
 
     private: // defense
 
@@ -254,7 +264,11 @@ namespace space_intruders
                 }
                 else
                 {
-                    _player_id = std::distance( sheet.animations.begin(), iter ) ;
+                    _player.ani_id = std::distance( sheet.animations.begin(), iter ) ;
+                }
+
+                {
+                    _player.pos = natus::math::vec2f_t( -400.0f, -250.0f ) ;
                 }
             }
 
@@ -288,12 +302,29 @@ namespace space_intruders
             //auto const dt = std::chrono::milliseconds( milli_dt ) ;
         }
 
-        void_t on_device( void_t ) noexcept
+        void_t on_device( natus::device::game_device_res_t dev ) noexcept
         {
+            using ctrl_t = natus::device::layouts::game_controller_t ;
+            ctrl_t ctrl( dev ) ;
+
+            natus::math::vec2f_t value ;
+            if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::tilting, value ) )
+            {
+                //natus::log::global_t::status( "movement: [" + ::std::to_string( value.x() ) + "," + ::std::to_string( value.y() ) + "]" ) ;
+                
+                _player.adv = value ;
+            }
+            if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::untilted, value ) )
+            {
+                _player.adv = natus::math::vec2f_t() ;
+            }
+            
         }
 
         void_t on_physics( size_t const milli_dt ) noexcept
         {
+            float_t const dt = (float_t(milli_dt) / 1000.0f) ;
+
             if( (clock_t::now() - _intruders_physics_tp) > _intruders_physics_dur )
             {
                 _intruders_physics_tp = clock_t::now() ;
@@ -325,15 +356,25 @@ namespace space_intruders
             
                 if( _ufo_spawned )
                 {
-                    float_t const dt = (float_t(milli_dt) / 1000.0f) ;
-                    _ufo.pos += _ufo_dir * natus::math::vec2f_t( 250.0f, 0.0f ) * dt ;
-                    _ufo.pos.x( std::floor(_ufo.pos.x()) ) ;
+                    _ufo.pos += _ufo_dir * natus::math::vec2f_t( 250.0f, 0.0f ) * dt ;                    
                     if( _ufo.pos.x() > 500.0f || _ufo.pos.x() < -500.0f )
                     {
                         _ufo_spawned = false ;
                         _ufo_physics_tp = clock_t::now() ;
                         _ufo_dir *= natus::math::vec2f_t( -1.0f, 1.0f ) ;
                     }
+                }
+            }
+
+            // player
+            {
+                _player.pos += natus::math::vec2f_t( 300.0f, 0.0f ) * 
+                    natus::math::vec2f_t( _player.adv.x() * dt ) ;
+
+                if( _player.pos.x() > 390.0f || _player.pos.x() < -390.0f )
+                {
+                    _player.pos = natus::math::vec2f_t( 390.0f * natus::math::fn<float_t>::sign(_player.pos.x()), 
+                        _player.pos.y() ) ;
                 }
             }
         }
@@ -403,19 +444,17 @@ namespace space_intruders
             }
 
             // player
-            if( _player_id != size_t(-1) )
+            if( _player.ani_id != size_t(-1) )
             {
-                size_t const at = _anim % sheets[sheet].animations[_player_id].duration ;
+                size_t const at = _anim % sheets[sheet].animations[_player.ani_id].duration ;
 
-                natus::math::vec2f_t pos( -400.0f, -250.0f ) ;
-                for( auto const & s : sheets[sheet].animations[_player_id].sprites )
+                for( auto const & s : sheets[sheet].animations[_player.ani_id].sprites )
                 {
                     if( at >= s.begin && at < s.end )
                     {
                         auto const & rect = sheets[sheet].rects[s.idx] ;
-                        pos += natus::math::vec2f_t( (800.0f/20.0f), 0.0f ) ;
                         sr->draw( 0, 
-                            pos, 
+                            _player.pos, 
                             natus::math::mat2f_t().identity(),
                             natus::math::vec2f_t(1500.0f),
                             rect.rect,  
@@ -465,9 +504,12 @@ namespace space_intruders
         natus_this_typedefs( the_game ) ;
 
     private: // device
-
+        
         natus::device::three_device_res_t _dev_mouse ;
         natus::device::ascii_device_res_t _dev_ascii ;
+
+        natus::device::game_device_res_t _game_dev = natus::device::game_device_t() ;
+        natus::ntd::vector< natus::device::imapping_res_t > _mappings ;
 
     private: // io
 
@@ -596,24 +638,30 @@ namespace space_intruders
 
         virtual natus::application::result on_init( void_t )
         { 
+            natus::device::xbc_device_res_t xbc_dev ;
+            natus::device::ascii_device_res_t ascii_dev ;
+            natus::device::three_device_res_t three_dev ;
+
             natus::device::global_t::system()->search( [&] ( natus::device::idevice_res_t dev_in )
             {
                 if( natus::device::three_device_res_t::castable( dev_in ) )
                 {
+                    three_dev = dev_in ;
                     _dev_mouse = dev_in ;
                 }
                 else if( natus::device::ascii_device_res_t::castable( dev_in ) )
                 {
+                    ascii_dev = dev_in ;
                     _dev_ascii = dev_in ;
                 }
             } ) ;
 
-            if( !_dev_mouse.is_valid() )
+            if( !three_dev.is_valid() )
             {
                 natus::log::global_t::status( "no three mosue found" ) ;
             }
 
-            if( !_dev_ascii.is_valid() )
+            if( !ascii_dev.is_valid() )
             {
                 natus::log::global_t::status( "no ascii keyboard found" ) ;
             }
@@ -887,6 +935,139 @@ namespace space_intruders
                 
             }
 
+            {
+                natus::device::xbc_device_res_t xbc_dev ;
+                natus::device::ascii_device_res_t ascii_dev ;
+                natus::device::three_device_res_t three_dev ;
+
+                natus::device::global_t::system()->search( [&] ( natus::device::idevice_res_t dev_in )
+                {
+                    if( natus::device::xbc_device_res_t::castable( dev_in ) )
+                    {
+                        if( xbc_dev.is_valid() ) return ;
+                        xbc_dev = dev_in ;
+                    }
+                    if( natus::device::ascii_device_res_t::castable( dev_in ) )
+                    {
+                        if( ascii_dev.is_valid() ) return ;
+                        ascii_dev = dev_in ;
+                    }
+                    if( natus::device::three_device_res_t::castable( dev_in ) )
+                    {
+                        if( three_dev.is_valid() ) return ;
+                        three_dev = dev_in ;
+                    }
+                } ) ;
+
+                #if 0
+                // do mappings for xbox
+                {
+                    using a_t = natus::device::game_device_t ;
+                    using b_t = natus::device::xbc_device_t ;
+
+                    using ica_t = a_t::layout_t::input_component ;
+                    using icb_t = b_t::layout_t::input_component ;
+
+                    using mapping_t = natus::device::mapping< a_t, b_t > ;
+                    mapping_t m( "xbc->gc", _game_dev, xbc_dev ) ;
+
+                    {
+                        auto const res = m.insert( ica_t::jump, icb_t::button_a ) ;
+                        natus::log::global_t::warning( natus::core::is_not(res), "can not do mapping." ) ;
+                    }
+                    {
+                        auto const res = m.insert( ica_t::shoot, icb_t::button_b ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+                    {
+                        auto const res = m.insert( ica_t::action_a, icb_t::button_x ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+                    {
+                        auto const res = m.insert( ica_t::action_b, icb_t::button_y ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+                    {
+                        auto const res = m.insert( ica_t::aim, icb_t::stick_right ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+                    {
+                        auto const res = m.insert( ica_t::movement, icb_t::stick_left ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    _mappings.emplace_back( natus::memory::res<mapping_t>(m) ) ;
+                }
+                #endif
+
+                // do mappings for ascii
+                {
+                    using a_t = natus::device::game_device_t ;
+                    using b_t = natus::device::ascii_device_t ;
+
+                    using ica_t = a_t::layout_t::input_component ;
+                    using icb_t = b_t::layout_t::input_component ;
+
+                    using mapping_t = natus::device::mapping< a_t, b_t > ;
+                    mapping_t m( "ascii->gc", _game_dev, ascii_dev ) ;
+
+                    {
+                        auto const res = m.insert( ica_t::jump, 
+                            b_t::layout_t::ascii_key_to_input_component(b_t::layout_t::ascii_key::space ) ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    {
+                        auto const res = m.insert( ica_t::movement,
+                            b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::a ),
+                            natus::device::mapping_detail::negative_x ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    {
+                        auto const res = m.insert( ica_t::movement,
+                            b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::d ),
+                            natus::device::mapping_detail::positive_x ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    {
+                        auto const res = m.insert( ica_t::movement,
+                            b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::w ),
+                            natus::device::mapping_detail::positive_y ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    {
+                        auto const res = m.insert( ica_t::movement,
+                            b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::s ),
+                            natus::device::mapping_detail::negative_y ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+                
+
+                    _mappings.emplace_back( natus::memory::res<mapping_t>( m ) ) ;
+                }
+
+                // do mappings for mouse
+                {
+                    using a_t = natus::device::game_device_t ;
+                    using b_t = natus::device::three_device_t ;
+
+                    using ica_t = a_t::layout_t::input_component ;
+                    using icb_t = b_t::layout_t::input_component ;
+
+                    using mapping_t = natus::device::mapping< a_t, b_t > ;
+                    mapping_t m( "mouse->gc", _game_dev, three_dev ) ;
+
+                    {
+                        auto const res = m.insert( ica_t::aim, icb_t::local_coords ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    _mappings.emplace_back( natus::memory::res<mapping_t>( m ) ) ;
+                }
+            }
 
             // should come last
             // field data
@@ -901,6 +1082,11 @@ namespace space_intruders
 
         virtual natus::application::result on_device( natus::application::app_t::device_data_in_t ) 
         {
+            for( auto & m : _mappings )
+            {
+                m->update() ;
+            }
+
             {
                 natus::device::layouts::ascii_keyboard_t ascii( _dev_ascii ) ;
                 if( ascii.get_state( natus::device::layouts::ascii_keyboard_t::ascii_key::f8 ) ==
@@ -917,6 +1103,8 @@ namespace space_intruders
                     _do_tool = !_do_tool ;
                 }
             }
+
+            _field.on_device( _game_dev ) ;
 
             NATUS_PROFILING_COUNTER_HERE( "Device Clock" ) ;
             return natus::application::result::ok ; 
