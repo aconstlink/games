@@ -571,6 +571,7 @@ namespace space_intruders
             _graphics = natus::graphics::async_views_t( { view1.async() } ) ;
             #else
             auto view1 = this_t::create_window( "Space Intruders", wi ) ;
+            //view1.window().vsync( false ) ;
             _graphics = natus::graphics::async_views_t( { view1.async() } ) ;
             #endif
 
@@ -1106,26 +1107,26 @@ namespace space_intruders
 
             _field.on_device( _game_dev ) ;
 
-            NATUS_PROFILING_COUNTER_HERE( "Device Clock" ) ;
+            //NATUS_PROFILING_COUNTER_HERE( "Device Clock" ) ;
             return natus::application::result::ok ; 
         }
 
         virtual natus::application::result on_logic( logic_data_in_t ) noexcept 
         { 
-            NATUS_PROFILING_COUNTER_HERE( "Logic Clock" ) ;
+            //NATUS_PROFILING_COUNTER_HERE( "Logic Clock" ) ;
             return natus::application::result::ok ; 
         }
 
         virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) 
         { 
-            NATUS_PROFILING_COUNTER_HERE( "Audio Clock" ) ;
+            //NATUS_PROFILING_COUNTER_HERE( "Audio Clock" ) ;
             return natus::application::result::ok ; 
         }
 
         virtual natus::application::result on_physics( natus::application::app_t::physics_data_in_t pd ) noexcept
         { 
             _field.on_physics( pd.micro_dt / 1000 ) ;
-            NATUS_PROFILING_COUNTER_HERE( "Physics Clock" ) ;
+            //NATUS_PROFILING_COUNTER_HERE( "Physics Clock" ) ;
             return natus::application::result::ok ; 
         }
 
@@ -1134,7 +1135,7 @@ namespace space_intruders
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( _root_render_states ) ;
+                    a.push( _root_render_states ) ;
                 } ) ;
             }
 
@@ -1143,7 +1144,7 @@ namespace space_intruders
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
                     a.use( _fb ) ;
-                    a.use( _fb_render_states ) ;
+                    a.push( _fb_render_states ) ;
                 } ) ;
             }
 
@@ -1235,15 +1236,15 @@ namespace space_intruders
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( natus::graphics::state_object_t() ) ;
-                    a.use( natus::graphics::framebuffer_object_t() ) ;
+                    a.pop( natus::graphics::backend::pop_type::render_state ) ;
+                    a.unuse( natus::graphics::backend::unuse_type::framebuffer ) ;
                 } ) ;
             }
             
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( natus::graphics::state_object_t() ) ;
+                    a.pop( natus::graphics::backend::pop_type::render_state ) ;
                 } ) ;
             }
 

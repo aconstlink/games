@@ -388,7 +388,7 @@ namespace space_intruders
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( _root_render_states ) ;
+                    a.push( _root_render_states ) ;
                 } ) ;
             }
 
@@ -397,7 +397,7 @@ namespace space_intruders
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
                     a.use( _fb ) ;
-                    a.use( _fb_render_states ) ;
+                    a.push( _fb_render_states ) ;
                 } ) ;
             }
 
@@ -454,15 +454,15 @@ namespace space_intruders
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( natus::graphics::state_object_t() ) ;
-                    a.use( natus::graphics::framebuffer_object_t() ) ;
+                    a.pop( natus::graphics::backend::pop_type::render_state ) ;
+                    a.unuse( natus::graphics::backend::unuse_type::framebuffer ) ;
                 } ) ;
             }
             
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
-                    a.use( natus::graphics::state_object_t() ) ;
+                    a.pop( natus::graphics::backend::pop_type::render_state ) ;
                 } ) ;
             }
 
