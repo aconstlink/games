@@ -672,6 +672,50 @@ namespace space_intruders
         {
             size_t const sheet = 0 ;
 
+            // player box
+            if( _player.ani_id != size_t(-1) )
+            {
+                auto const rdims = _player.cur_sprite.rect.zw() - _player.cur_sprite.rect.xy() ;
+                auto const p0 =  natus::math::vec2f_t(-0.5f, -0.5f) * rdims * natus::math::vec2f_t(1500) + _player.pos ;
+                auto const p1 =  natus::math::vec2f_t(-0.5f, +0.5f) *rdims * natus::math::vec2f_t(1500) + _player.pos ;
+                auto const p2 =  natus::math::vec2f_t(+0.5f, +0.5f) *rdims * natus::math::vec2f_t(1500) + _player.pos ;
+                auto const p3 =  natus::math::vec2f_t(+0.5f, -0.5f) *rdims * natus::math::vec2f_t(1500) + _player.pos ;
+
+                natus::math::vec4f_t color0( 1.0f, 1.0f, 1.0f, 0.5f ) ;
+                natus::math::vec4f_t color1( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+
+                pr->draw_rect( 50, p0, p1, p2, p3, color0, color1 ) ;
+            }
+
+            // player box
+            if( _ufo_spawned && _ufo.ani_id != size_t(-1) )
+            {
+                auto const rdims = _ufo.cur_sprite.rect.zw() - _ufo.cur_sprite.rect.xy() ;
+                auto const p0 =  natus::math::vec2f_t(-0.5f, -0.5f) * rdims * natus::math::vec2f_t(3000) + _ufo.pos ;
+                auto const p1 =  natus::math::vec2f_t(-0.5f, +0.5f) *rdims * natus::math::vec2f_t(3000) + _ufo.pos ;
+                auto const p2 =  natus::math::vec2f_t(+0.5f, +0.5f) *rdims * natus::math::vec2f_t(3000) + _ufo.pos ;
+                auto const p3 =  natus::math::vec2f_t(+0.5f, -0.5f) *rdims * natus::math::vec2f_t(3000) + _ufo.pos ;
+
+                natus::math::vec4f_t color0( 1.0f, 1.0f, 1.0f, 0.5f ) ;
+                natus::math::vec4f_t color1( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+
+                pr->draw_rect( 50, p0, p1, p2, p3, color0, color1 ) ;
+            }
+            
+            for( auto & intr : _intruders )
+            {
+                auto const rdims = intr.cur_sprite.rect.zw() - intr.cur_sprite.rect.xy() ;
+                auto const p0 =  natus::math::vec2f_t(-0.5f, -0.5f) * rdims * natus::math::vec2f_t(3000) + intr.pos ;
+                auto const p1 =  natus::math::vec2f_t(-0.5f, +0.5f) *rdims * natus::math::vec2f_t(3000) + intr.pos ;
+                auto const p2 =  natus::math::vec2f_t(+0.5f, +0.5f) *rdims * natus::math::vec2f_t(3000) + intr.pos ;
+                auto const p3 =  natus::math::vec2f_t(+0.5f, -0.5f) *rdims * natus::math::vec2f_t(3000) + intr.pos ;
+
+                natus::math::vec4f_t color0( 1.0f, 1.0f, 1.0f, 0.5f ) ;
+                natus::math::vec4f_t color1( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+
+                pr->draw_rect( 50, p0, p1, p2, p3, color0, color1 ) ;
+            }
+
             // defense
             if( _defense_id != size_t(-1) )
             {
@@ -757,7 +801,7 @@ namespace space_intruders
     private: // tool/debug
 
         bool_t _do_tool = false ;
-        bool_t _draw_debug = false ;
+        bool_t _draw_debug = true ;
 
     private: // sprite tool
 
@@ -1422,7 +1466,7 @@ namespace space_intruders
 
             if( _draw_debug )
             {
-                
+                _field.on_debug_graphics( _pr, *_sheets, rdi.milli_dt ) ;
             }
 
             // draw extend of aspect
