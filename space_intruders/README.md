@@ -1,7 +1,7 @@
 # space intruders
 This is a space invaders clone. 
 
-The main purpose of this game is to check certain engine features and not to fully clone the original game.
+The main purpose of this game is to check certain engine features and not to fully clone the original game. The game may look simple but there is acutally alot going on in the background!
 
 ![sample](https://github.com/aconstlink/games/blob/main/space_intruders/sample_image.png "Sample Image")
 
