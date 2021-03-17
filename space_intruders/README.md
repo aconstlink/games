@@ -10,7 +10,7 @@ This game may look simple but there is acutally alot going on in the background!
 Since this is the first "real" interactive application besides the simplified [test apps](https://github.com/aconstlink/natus_tests) some bugs were expected. 
 
 ## controls
-Keyboard : **a** | left / **d** | right / **space** | shoot  
+Keyboard : **a** | left / **d** | right / **space** | shoot / **F2** | Debug menu
 XBox Ctrl : **left analog** | left and right / **A** | shoot
 
 ## application
