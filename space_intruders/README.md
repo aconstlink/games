@@ -8,9 +8,9 @@ The main purpose of this game is to check certain engine features and not to ful
 Since this is the first "real" interactive application besides the simplified [test apps](https://github.com/aconstlink/natus_tests) some bugs were expected. 
 
 ## controls
-a: left
-d: right
-space: shoot
+Keyboard : **a** | left / **d** | right / **space** | shoot  
+XBox Ctrl : **left analog** | left and right / **A** | shoot
+
 
 ## application
 
