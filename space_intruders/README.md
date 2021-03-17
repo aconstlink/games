@@ -1,7 +1,9 @@
 # space intruders
 This is a space invaders clone. 
 
-The main purpose of this game is to check certain engine features and not to fully clone the original game. The game may look simple but there is acutally alot going on in the background!
+The main purpose of this game is to check certain engine features and not to fully clone the original game. Another important part of this game should be to start iterating towards a little and usable game framework. 
+
+This game may look simple but there is acutally alot going on in the background!
 
 ![sample](https://github.com/aconstlink/games/blob/main/space_intruders/sample_image.png "Sample Image")
 
@@ -27,10 +29,13 @@ It is always nice to see that the reconfiguration of graphics objects is working
 
 Across all graphics backends, the game renders well. The OpenGL 3 backend shows some stuttering on windows which is not observable using the d3d11 backend. This is not the case on linux where gl3 and es3 render well. The gl3 backend stuttering issue may be related to the uniform variable update which might be fixed when using uniform buffers. d3d11 uses constant buffers for app->shader variable exchange.
 
+## physics and collision
+The physics and collision is very simple. Projectiles hitting objects will be noticed but there is no collision response besides that.
+
 ## animation
 The animation "system" is implemented in this application in order to check what is needed to implement such a thing in the engine directly. The sprite renderer is used for showing the currently animated sprite image. The animation and the image reference is imported from the natus animation files and show correct working.
 
+Although the animation is working well and is more complex than in other tests before, there is no dying animation.
+
 ## audio
 TBD
-
-## other issues
