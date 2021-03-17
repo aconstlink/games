@@ -25,11 +25,6 @@
 #include <natus/graphics/variable/variable_set.hpp>
 #include <natus/profiling/macros.h>
 
-#include <natus/geometry/mesh/polygon_mesh.h>
-#include <natus/geometry/mesh/tri_mesh.h>
-#include <natus/geometry/mesh/flat_tri_mesh.h>
-#include <natus/geometry/3d/cube.h>
-#include <natus/geometry/3d/tetra.h>
 #include <natus/math/vector/vector3.hpp>
 #include <natus/math/vector/vector4.hpp>
 #include <natus/math/matrix/matrix4.hpp>
@@ -163,6 +158,11 @@ namespace space_intruders
             size_t anim_time = 0 ;
             size_t max_ani_time = 1 ;
 
+            // 0: none
+            // 1: player
+            // 2: intruder
+            size_t from = 0 ;
+
             // the currently animated sprite
             space_intruders::sprite_sheet::sprite cur_sprite ;
             float_t scale = 2500.0f ;
@@ -201,7 +201,7 @@ namespace space_intruders
             // the currently animated sprite
             space_intruders::sprite_sheet::sprite cur_sprite ;
 
-            float_t scale = 1500.0f ;
+            float_t scale = 3000.0f ;
 
             bounding_box_2d_t get_bb( void_t ) const noexcept
             {
@@ -505,6 +505,7 @@ namespace space_intruders
                     auto s = _projectiles[0] ;
                     s.adv = natus::math::vec2f_t( 0.0f, 1.0f ) ;
                     s.pos = _player.pos ;
+                    s.from = 1 ;
                     _shots.emplace_back( s ) ;
                 }
             }
@@ -579,6 +580,7 @@ namespace space_intruders
                             auto s = _projectiles[sx%_projectiles.size()] ;
                             s.adv = natus::math::vec2f_t( 0.0f, -1.0f ) ;
                             s.pos = _intruders[ idx ].pos ;
+                            s.from = 2 ;
                             _shots.emplace_back( s ) ;
                             break ;
                         }
@@ -666,6 +668,22 @@ namespace space_intruders
                 }
                 _shots.resize( end ) ;
             }
+
+            // collision testing
+            {
+                size_t end = _shots.size() ;
+                for( size_t i=0; i<end; ++i )
+                {
+                    auto const p_bb = _shots[i].get_bb() ;
+
+                    // test against defense
+                    for( auto & d : _defenses )
+                    {
+
+                    }
+                }
+                _shots.resize( end ) ;
+            }
         }
 
         void_t on_graphics( natus::gfx::sprite_render_2d_res_t sr, sheets_cref_t sheets, size_t const milli_dt ) noexcept
@@ -678,7 +696,7 @@ namespace space_intruders
                 sr->draw( 0, 
                     s.pos, 
                     natus::math::mat2f_t().identity(),
-                    natus::math::vec2f_t(1500.0f),
+                    natus::math::vec2f_t(s.scale),
                     s.cur_sprite.rect,  
                     sheet, s.cur_sprite.pivot, 
                     natus::math::vec4f_t(1.0f) ) ;
@@ -705,7 +723,7 @@ namespace space_intruders
                         sr->draw( 0, 
                             intr.pos, 
                             natus::math::mat2f_t().identity(),
-                            natus::math::vec2f_t(3000.0f),
+                            natus::math::vec2f_t(intr.scale),
                             intr.cur_sprite.rect,  
                             sheet, intr.cur_sprite.pivot, 
                             colors[5 - (intr.ani_id % 6)] ) ;
@@ -719,7 +737,7 @@ namespace space_intruders
                 sr->draw( 0, 
                     _ufo.pos, 
                     natus::math::mat2f_t().identity(),
-                    natus::math::vec2f_t(3000.0f),
+                    natus::math::vec2f_t(_ufo.scale),
                     _ufo.cur_sprite.rect,  
                     sheet, _ufo.cur_sprite.pivot, 
                     natus::math::vec4f_t(1.0f) ) ;
@@ -731,7 +749,7 @@ namespace space_intruders
                 sr->draw( 0, 
                     _player.pos, 
                     natus::math::mat2f_t().identity(),
-                    natus::math::vec2f_t(1500.0f),
+                    natus::math::vec2f_t(_player.scale),
                     _player.cur_sprite.rect,  
                     sheet, _player.cur_sprite.pivot, 
                     natus::math::vec4f_t(1.0f) ) ;
@@ -743,7 +761,7 @@ namespace space_intruders
                 sr->draw( 0, 
                     d.pos, 
                     natus::math::mat2f_t().identity(),
-                    natus::math::vec2f_t(2500.0f),
+                    natus::math::vec2f_t(d.scale),
                     d.cur_sprite.rect,  
                     sheet, d.cur_sprite.pivot, 
                     natus::math::vec4f_t(1.0f) ) ;
