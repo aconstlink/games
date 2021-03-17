@@ -25,6 +25,8 @@ In essence, the frame lock could be moved infront of the section where all rende
 
 It is always nice to see that the reconfiguration of graphics objects is working well. So the framebuffer is resized if the window size changes. This is very important to keep the framebuffer sharp and not blurred out.
 
+Across all graphics backends, the game renders well. The OpenGL 3 backend shows some stuttering on windows which is not observable using the d3d11 backend. This is not the case on linux where gl3 and es3 render well. The gl3 backend stuttering issue may be related to the uniform variable update which might be fixed when using uniform buffers. d3d11 uses constant buffers for app->shader variable exchange.
+
 ## animation
 The animation "system" is implemented in this application in order to check what is needed to implement such a thing in the engine directly. The sprite renderer is used for showing the currently animated sprite image. The animation and the image reference is imported from the natus animation files and show correct working.
 
