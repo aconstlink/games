@@ -1,7 +1,9 @@
 # space intruders
 This is a space invaders clone. 
 
-The main purpose of this game is to check certain engine features.
+The main purpose of this game is to check certain engine features and not to fully clone the original game.
+
+![sample](https://github.com/aconstlink/games/tree/main/space_intruders/sample_image.png "Sample Image")
 
 Since this is the first "real" interactive application besides the simplified [test apps](https://github.com/aconstlink/natus_tests) some bugs were expected. 
 
