@@ -346,6 +346,22 @@ namespace space_intruders
 
         size_t _anim = 0 ;
         
+    private: // audio
+
+        natus::audio::result_res_t _laser_sound_res = natus::audio::result_t(natus::audio::result::initial) ;
+        natus::audio::buffer_object_res_t _laser_sound = natus::audio::buffer_object_t() ;
+        natus::audio::buffer_object_res_t _ufo_sound = natus::audio::buffer_object_t() ;
+        natus::audio::buffer_object_res_t _explosion_sound = natus::audio::buffer_object_t() ;
+        natus::audio::buffer_object_res_t _hit_player_sound = natus::audio::buffer_object_t() ;
+        
+        struct audio_queue_item
+        {
+            natus::audio::buffer_object_res_t buffer ;
+            natus::audio::execution_options eo ;
+            bool_t loop = false ;
+        } ;
+        natus::ntd::vector< audio_queue_item > _audio_play_queue ;
+
     private: // score
 
         size_t _score = 0 ;
@@ -359,6 +375,10 @@ namespace space_intruders
         struct init_data
         {
             sheets_res_t sheets ;
+            natus::audio::buffer_object_res_t laser ;
+            natus::audio::buffer_object_res_t ufo ;
+            natus::audio::buffer_object_res_t explosion ;
+            natus::audio::buffer_object_res_t hit_player ;
         };
         natus_typedef( init_data ) ;
 
@@ -393,6 +413,9 @@ namespace space_intruders
             if( !this_t::is_player_alive() ||
                 !this_t::any_intruders() )
             {
+                if( !this_t::is_player_alive() ) 
+                    _score = 0 ;
+
                 _ufo.hit = false ;
                 _ufo_spawned = false ;
                 for( auto & intr : _intruders )
@@ -405,16 +428,20 @@ namespace space_intruders
                 {
                     d.hits = 0 ;
                 }
-                if( !this_t::is_player_alive() ) 
-                    _score = 0 ;    
             }
-            
         }
 
         bool_t on_init( init_data_rref_t d ) noexcept
         {
             auto const & sheets = *d.sheets ;
             if( sheets.size() == 0 ) return false ;
+
+            {
+                _laser_sound = d.laser ;
+                _ufo_sound = d.ufo ;
+                _explosion_sound = d.explosion ;
+                _hit_player_sound = d.hit_player ;
+            }
 
             auto const & sheet = sheets[0] ;
 
@@ -597,12 +624,21 @@ namespace space_intruders
                     s.pos = _player.pos ;
                     s.from = 1 ;
                     _shots.emplace_back( s ) ;
+
+                    {
+                        audio_queue_item item ;
+                        item.buffer = _laser_sound ;
+                        item.eo = natus::audio::execution_options::play ;
+                        _audio_play_queue.emplace_back( item ) ;
+                    }
                 }
             }
         }
 
         void_t on_logic( sheets_cref_t sheets, size_t const milli_dt ) noexcept 
         {
+            this_t::reset() ;
+
             size_t const sheet = 0 ;
 
             // projectiles
@@ -672,6 +708,15 @@ namespace space_intruders
                             s.pos = _intruders[ idx ].pos ;
                             s.from = 2 ;
                             _shots.emplace_back( s ) ;
+
+
+                            {
+                                audio_queue_item item ;
+                                item.buffer = _laser_sound ;
+                                item.eo = natus::audio::execution_options::play ;
+                                _audio_play_queue.emplace_back( item ) ;
+                            }
+
                             break ;
                         }
                     }
@@ -713,6 +758,14 @@ namespace space_intruders
                     _ufo_spawned = true ;
                     if( _ufo_dir.x() < 0.0f ) _ufo.pos = natus::math::vec2f_t( 450.0f, 250.0f ) ; 
                     else _ufo.pos = natus::math::vec2f_t( -450.0f, 250.0f ) ; 
+
+                    {
+                        audio_queue_item item ;
+                        item.buffer = _ufo_sound ;
+                        item.eo = natus::audio::execution_options::play ;
+                        item.loop = true ;
+                        _audio_play_queue.emplace_back( item ) ;
+                    }
                 }
             
                 if( _ufo_spawned && _ufo.hit )
@@ -730,6 +783,13 @@ namespace space_intruders
                         _ufo_spawned = false ;
                         _ufo_physics_tp = clock_t::now() ;
                         _ufo_dir *= natus::math::vec2f_t( -1.0f, 1.0f ) ;
+
+                        {
+                            audio_queue_item item ;
+                            item.buffer = _ufo_sound ;
+                            item.eo = natus::audio::execution_options::stop ;
+                            _audio_play_queue.emplace_back( item ) ;
+                        }
                     }
                 }
             }
@@ -796,6 +856,21 @@ namespace space_intruders
                             _ufo.hit = true ;
                             _shots[i--] = _shots[--end] ;
                             _score += 200 ;
+
+                            {
+                                audio_queue_item item ;
+                                item.buffer = _ufo_sound ;
+                                item.eo = natus::audio::execution_options::stop ;
+                                _audio_play_queue.emplace_back( item ) ;
+                            }
+
+                            {
+                                audio_queue_item item ;
+                                item.buffer = _explosion_sound ;
+                                item.eo = natus::audio::execution_options::play ;
+                                item.loop = false ;
+                                _audio_play_queue.emplace_back( item ) ;
+                            }
                         }
                     }
                     if( hit ) continue ;
@@ -825,6 +900,14 @@ namespace space_intruders
                         {   
                             --_player.num_lifes ;
                             _shots[i--] = _shots[--end] ;
+
+                            {
+                                audio_queue_item item ;
+                                item.buffer = _hit_player_sound ;
+                                item.eo = natus::audio::execution_options::play ;
+                                _audio_play_queue.emplace_back( item ) ;
+                            }
+
                             break ;
                         }
                         if( hit ) continue ;
@@ -832,6 +915,18 @@ namespace space_intruders
                 }
                 _shots.resize( end ) ;
             }
+        }
+
+        void_t on_audio( natus::audio::async_access_t audio ) noexcept
+        {
+            for( auto & b : _audio_play_queue )
+            {
+                natus::audio::backend::execute_detail ed ;
+                ed.to = b.eo ;
+                ed.loop = b.loop ;
+                audio.execute( b.buffer, ed ) ;
+            }
+            _audio_play_queue.clear() ;
         }
 
         void_t on_graphics( natus::gfx::sprite_render_2d_res_t sr, sheets_cref_t sheets, size_t const milli_dt ) noexcept
@@ -1051,6 +1146,15 @@ namespace space_intruders
 
         field_t _field ;
 
+    private: // audio
+
+        natus::audio::async_access_t _audio ;
+        
+        natus::audio::buffer_object_res_t _laser = natus::audio::buffer_object_t() ;
+        natus::audio::buffer_object_res_t _ufo = natus::audio::buffer_object_t() ;
+        natus::audio::buffer_object_res_t _explosion = natus::audio::buffer_object_t() ;
+        natus::audio::buffer_object_res_t _hit_player = natus::audio::buffer_object_t() ;
+
     public:
 
         the_game( void_t ) 
@@ -1080,9 +1184,11 @@ namespace space_intruders
             _db = natus::io::database_t( natus::io::path_t( DATAPATH ), "./working", "data" ) ;
 
             _se = natus::tool::sprite_editor_res_t( natus::tool::sprite_editor_t( _db )  ) ;
+
+            _audio = this_t::create_audio_engine() ;
         }
         the_game( this_cref_t ) = delete ;
-        the_game( this_rref_t rhv ) : app( ::std::move( rhv ) ) 
+        the_game( this_rref_t rhv ) : app( std::move( rhv ) ) 
         {
             _camera_0 = std::move( rhv._camera_0 ) ;
             _camera_1 = std::move( rhv._camera_1 ) ;
@@ -1098,6 +1204,8 @@ namespace space_intruders
             _se = std::move( rhv._se ) ;
 
             _field = std::move( rhv._field ) ;
+
+            _audio = std::move( rhv._audio ) ;
         }
         virtual ~the_game( void_t ) 
         {}
@@ -1570,11 +1678,72 @@ namespace space_intruders
                 }
             }
 
+            // audio
+            {
+                //
+                // prepare the audio buffer for playing
+                //
+                {
+                    _laser = natus::audio::buffer_object_res_t( natus::audio::buffer_object_t( "audio.laser" ) ) ;
+                    _ufo = natus::audio::buffer_object_res_t( natus::audio::buffer_object_t( "audio.ufo" ) ) ;
+                    _explosion = natus::audio::buffer_object_res_t( natus::audio::buffer_object_t( "audio.explosion" ) ) ;
+                    _hit_player = natus::audio::buffer_object_res_t( natus::audio::buffer_object_t( "audio.hit_player" ) ) ;
+
+                    natus::format::module_registry_res_t mod_reg = natus::format::global_t::registry() ;
+                    //auto fitem1 = mod_reg->import_from( natus::io::location_t( "audio.Bugseed - Bohemian Beatnik LP - 01 harlot.ogg" ), _db ) ;
+                    auto fitem1 = mod_reg->import_from( natus::io::location_t( "audio.laser.wav" ), _db ) ;
+                    auto fitem2 = mod_reg->import_from( natus::io::location_t( "audio.ufo.wav" ), _db ) ;
+                    auto fitem3 = mod_reg->import_from( natus::io::location_t( "audio.explosion.wav" ), _db ) ;
+                    auto fitem4 = mod_reg->import_from( natus::io::location_t( "audio.hit_player.wav" ), _db ) ;
+                    
+                    {
+                        natus::format::audio_item_res_t ii = fitem1.get() ;
+                        if( ii.is_valid() ) 
+                        {
+                            *_laser = *(ii->obj) ;
+                        }
+                    }
+
+                    {
+                        natus::format::audio_item_res_t ii = fitem2.get() ;
+                        if( ii.is_valid() ) 
+                        {
+                            *_ufo = *(ii->obj) ;
+                        }
+                    }
+
+                    {
+                        natus::format::audio_item_res_t ii = fitem3.get() ;
+                        if( ii.is_valid() ) 
+                        {
+                            *_explosion = *(ii->obj) ;
+                        }
+                    }
+
+                    {
+                        natus::format::audio_item_res_t ii = fitem4.get() ;
+                        if( ii.is_valid() ) 
+                        {
+                            *_hit_player= *(ii->obj) ;
+                        }
+                    }
+                
+                    _audio.configure( _laser ) ;
+                    _audio.configure( _ufo ) ;
+                    _audio.configure( _explosion ) ;
+                    _audio.configure( _hit_player ) ;
+                }
+            }
+
             // should come last
             // field data
             {
                 space_intruders::field_t::init_data_t field_init_data ;
                 field_init_data.sheets = _sheets  ;
+                field_init_data.laser = _laser ;
+                field_init_data.ufo = _ufo ;
+                field_init_data.explosion = _explosion ;
+                field_init_data.hit_player = _hit_player ;
                 _field.on_init( std::move( field_init_data ) ) ;
             }
 
@@ -1615,8 +1784,6 @@ namespace space_intruders
         virtual natus::application::result on_logic( logic_data_in_t d ) noexcept 
         { 
             _field.on_logic( *_sheets, d.milli_dt ) ;
-            _field.reset() ;
-            
 
             NATUS_PROFILING_COUNTER_HERE( "Logic Clock" ) ;
             return natus::application::result::ok ; 
@@ -1624,6 +1791,7 @@ namespace space_intruders
 
         virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) 
         { 
+            _field.on_audio( _audio ) ;
             NATUS_PROFILING_COUNTER_HERE( "Audio Clock" ) ;
             return natus::application::result::ok ; 
         }
