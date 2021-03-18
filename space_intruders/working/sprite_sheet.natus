@@ -229,11 +229,7 @@
                     <frame sprite="intr_5_move_0" duration="1000" />
                     <frame sprite="intr_5_move_1" duration="1000" />
                 </animation>
-                <animation name="intr_6_move">
-                    <frame sprite="intr_6_move_0" duration="1000" />
-                    <frame sprite="intr_6_move_1" duration="1000" />
-                </animation>
-                <animation name="projectile_0">
+               <animation name="projectile_0">
                     <frame sprite="projectile_0_0" duration="1000" />
                     <frame sprite="projectile_0_1" duration="1000" />
                 </animation>

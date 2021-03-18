@@ -1181,6 +1181,7 @@ namespace space_intruders
             _graphics = natus::graphics::async_views_t( { view1.async() } ) ;
             #endif
 
+            natus::log::global_t::status(natus::ntd::string_t(DATAPATH));
             _db = natus::io::database_t( natus::io::path_t( DATAPATH ), "./working", "data" ) ;
 
             _se = natus::tool::sprite_editor_res_t( natus::tool::sprite_editor_t( _db )  ) ;
@@ -1571,6 +1572,7 @@ namespace space_intruders
                 } ) ;
 
                 // do mappings for xbox
+                if( xbc_dev.is_valid() )
                 {
                     using a_t = natus::device::game_device_t ;
                     using b_t = natus::device::xbc_device_t ;
