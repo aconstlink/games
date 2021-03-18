@@ -5,7 +5,7 @@ The main purpose of this game is to check certain engine features and not to ful
 
 This game may look simple but there is acutally alot going on in the background!
 
-![sample](https://github.com/aconstlink/games/blob/main/space_intruders/sample_image.png "Sample Image")
+![sample](https://github.com/aconstlink/games/blob/main/01_space_intruders/sample_image.png "Sample Image")
 
 Since this is the first "real" interactive application besides the simplified [test apps](https://github.com/aconstlink/natus_tests) some bugs were expected. 
 
