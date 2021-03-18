@@ -38,4 +38,11 @@ The animation "system" is implemented in this application in order to check what
 Although the animation is working well and is more complex than in other tests before, there is no dying animation.
 
 ## audio
-TBD
+Audio just worked right out of the box as implemented in the test applications. There I found two issues. One where the OpenAL buffer was allocated too big which just revealed when playing the audio in looping mode. The seconds issue was that looping was not implemented.
+
+## conclusion
+There need to be done something in order to handle objects better.
+- Assets need to be handled in some sort of manager or database which can be passed around and any instance can just grap the required assets.
+- Physics and collision need to be encapsulated in a separate state that a game object could use
+- Task system with plug-able tasks for conditional and dependent task processing
+- Event system for queuing events for later processing
