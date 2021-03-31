@@ -16,6 +16,7 @@ natus_emacs_default_directory( "${CMAKE_CURRENT_LIST_DIR}/natus" )
 set( subdirs
     "00_empty_template"
     "01_space_intruders"
+    "02_paddle_n_ball"
     )
 
 foreach( _subdir ${subdirs} )

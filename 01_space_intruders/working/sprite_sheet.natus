@@ -205,55 +205,55 @@
             </sprites>
 
             <animations>
-                <animation name="intr_0_move">
+                <animation object="intr_0" name="move">
                     <frame sprite="intr_0_move_0" duration="1000" />
                     <frame sprite="intr_0_move_1" duration="1000" />
                 </animation>
-                <animation name="intr_1_move">
+                <animation object="intr_1" name="move">
                     <frame sprite="intr_1_move_0" duration="1000" />
                     <frame sprite="intr_1_move_1" duration="1000" />
                 </animation>
-                <animation name="intr_2_move">
+                <animation object="intr_2" name="move">
                     <frame sprite="intr_2_move_0" duration="1000" />
                     <frame sprite="intr_2_move_1" duration="1000" />
                 </animation>
-                <animation name="intr_3_move">
+                <animation object="intr_3" name="move">
                     <frame sprite="intr_3_move_0" duration="1000" />
                     <frame sprite="intr_3_move_1" duration="1000" />
                 </animation>
-                <animation name="intr_4_move">
+                <animation object="intr_4" name="move">
                     <frame sprite="intr_4_move_0" duration="1000" />
                     <frame sprite="intr_4_move_1" duration="1000" />
                 </animation>
-                <animation name="intr_5_move">
+                <animation object="intr_5" name="move">
                     <frame sprite="intr_5_move_0" duration="1000" />
                     <frame sprite="intr_5_move_1" duration="1000" />
                 </animation>
-               <animation name="projectile_0">
+               <animation object="projectile_0" name="move">
                     <frame sprite="projectile_0_0" duration="1000" />
                     <frame sprite="projectile_0_1" duration="1000" />
                 </animation>
-                <animation name="projectile_1">
+                <animation object="projectile_1" name="move">
                     <frame sprite="projectile_1_0" duration="1000" />
                     <frame sprite="projectile_1_1" duration="1000" />
                 </animation>
-                <animation name="projectile_2">
+                <animation object="projectile_2" name="move">
                     <frame sprite="projectile_2_0" duration="1000" />
                     <frame sprite="projectile_2_1" duration="1000" />
                 </animation>
-                <animation name="projectile_3">
+                <animation object="projectile_3" name="move">
                     <frame sprite="projectile_3_0" duration="1000" />
                     <frame sprite="projectile_3_1" duration="1000" />
                 </animation>
-                <animation name="player">
+                <animation object="player" name="idle">
                     <frame sprite="player_0" duration="1000" />
                     <frame sprite="player_0" duration="1000" />
                 </animation>
-                <animation name="defense">
+                <animation object="defense" name="idle">
                     <frame sprite="defense_0" duration="1000" />
                     <frame sprite="defense_0" duration="1000" />
                 </animation>
-                <animation name="ufo_move">
+                <animation object="ufo" name="move">
                     <frame sprite="ufo_move_0" duration="1000" />
                     <frame sprite="ufo_move_1" duration="1000" />
                 </animation>
