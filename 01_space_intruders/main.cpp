@@ -409,6 +409,7 @@ namespace space_intruders
                 for( auto const & e : entities )
                 {
                     _player = e ;
+                    _player.scale = 2000.0f ;
                     _player.pos = natus::math::vec2f_t( -400.0f, -250.0f ) ;
                 }
             }
