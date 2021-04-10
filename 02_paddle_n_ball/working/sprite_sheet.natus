@@ -1,0 +1,81 @@
+
+<natus>
+    <project>
+    </project>
+
+    <sprite_sheets ref="" />
+    <sprite_sheets>
+
+        <sprite_sheet name="space_intruders">
+
+            <image src="images/paddle_n_ball.png" />
+            <sprites>
+                <sprite name="paddle_move_0">
+                    <animation rect="44 173 85 178" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="paddle_small_move_0">
+                    <animation rect="52 157 77 162" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="brick_move_0">
+                    <animation rect="57 141 72 146" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+                <sprite name="ball_move_0">
+                    <animation rect="50 122 61 133" pivot="0 0" />
+                    <collision rect="0 0 10 10" />
+                    <hits>
+                        <hit name="head" rect="0 0 10 10" />
+                    </hits>
+                </sprite>
+
+            </sprites>
+
+            <animations>
+                <animation object="paddle" name="move">
+                    <frame sprite="paddle_move_0" duration="1000" />
+                    <frame sprite="paddle_move_0" duration="1000" />
+                </animation>
+                <animation object="paddle_small" name="move">
+                    <frame sprite="paddle_small_move_0" duration="1000" />
+                    <frame sprite="paddle_small_move_0" duration="1000" />
+                </animation>
+                <animation object="brick" name="idle">
+                    <frame sprite="brick_move_0" duration="1000" />
+                    <frame sprite="brick_move_0" duration="1000" />
+                </animation>
+                <animation object="ball" name="move">
+                    <frame sprite="ball_move_0" duration="1000" />
+                    <frame sprite="ball_move_0" duration="1000" />
+                </animation>
+            </animations>
+
+        </sprite_sheet>
+
+    </sprite_sheets>
+
+    <!-- allow to compose different sprite animatoins
+         from different sprite sheets -->
+    <sprite_compositions>
+        <composition>
+            <animation sprite_sheet="" name="">
+                <origin value="" />
+                <!-- transformations animation -->
+            </animation>
+        </composition>
+    </sprite_compositions>
+
+</natus>

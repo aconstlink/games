@@ -249,7 +249,6 @@ namespace space_intruders
         
     private: // audio
 
-        natus::audio::result_res_t _laser_sound_res = natus::audio::result_t(natus::audio::result::initial) ;
         natus::audio::buffer_object_res_t _laser_sound = natus::audio::buffer_object_t() ;
         natus::audio::buffer_object_res_t _ufo_sound = natus::audio::buffer_object_t() ;
         natus::audio::buffer_object_res_t _explosion_sound = natus::audio::buffer_object_t() ;
@@ -780,7 +779,7 @@ namespace space_intruders
         {
             size_t const sheet = 0 ;
 
-            // ufo
+            // shots
             for( auto & s : _shots )
             {
                 sr->draw( 0, 
@@ -1646,7 +1645,7 @@ namespace space_intruders
 
         virtual natus::application::result on_logic( logic_data_in_t d ) noexcept 
         { 
-            _field.on_logic( *_sheets, d.milli_dt ) ;
+            _field.on_logic( *_sheets, d.micro_dt / 1000 ) ;
 
             NATUS_PROFILING_COUNTER_HERE( "Logic Clock" ) ;
             return natus::application::result::ok ; 
@@ -1740,7 +1739,7 @@ namespace space_intruders
 
             if( _draw_debug )
             {
-                _field.on_debug_graphics( _pr, *_sheets, rdi.milli_dt ) ;
+                _field.on_debug_graphics( _pr, *_sheets, rdi.milli_dt) ;
             }
 
             // draw extend of aspect

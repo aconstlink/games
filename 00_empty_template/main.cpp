@@ -222,7 +222,7 @@ namespace space_intruders
                    
                     rss.view_s.do_change = true ;
                     rss.view_s.ss.do_activate = true ;
-                    rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, _screen_target.x(), _screen_target.y() ) ;
+                    rss.view_s.ss.vp = natus::math::vec4ui_t( 0, 0, uint_t(_screen_target.x()), uint_t(_screen_target.y()) ) ;
 
                     so.add_render_state_set( rss ) ;
                 }
@@ -324,7 +324,7 @@ namespace space_intruders
             {
                 _fb = natus::graphics::framebuffer_object_t( "the_scene" ) ;
                 _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 1 )
-                    .resize( _screen_target.x(), _screen_target.y() ) ;
+                    .resize( uint_t(_screen_target.x()), uint_t(_screen_target.y()) ) ;
 
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
                 {
