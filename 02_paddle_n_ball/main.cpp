@@ -229,6 +229,7 @@ namespace paddle_n_ball
             {
                 natus::gfx::sprite_sheets_res_t sheets ;
                 natus::io::database_res_t db ;
+                natus::audio::async_access_t audio ;
             };
             natus_typedef( init_data ) ;
             init_data _init_data ;
@@ -336,7 +337,7 @@ namespace paddle_n_ball
 
                 auto const & sheets = *_init_data.sheets ;
                 if( sheets.size() == 0 ) return natus::concurrent::task_res_t() ;
-
+                
                 auto const & sheet = sheets[0] ;
 
                 natus::concurrent::task_res_t root = natus::concurrent::task_t( [&]( natus::concurrent::task_res_t )
@@ -396,6 +397,40 @@ namespace paddle_n_ball
                     }
                 } ) ;
                 root->then( prepare_ball )->then( finish ) ;
+
+                natus::concurrent::task_res_t load_audio = natus::concurrent::task_t( [&]( natus::concurrent::task_res_t )
+                {
+                    auto b1 = natus::audio::buffer_object_res_t( natus::audio::buffer_object_t( "audio.paddle.hit" ) ) ;
+                    auto b2 = natus::audio::buffer_object_res_t( natus::audio::buffer_object_t( "audio.brick.hit" ) ) ;
+
+                    natus::format::module_registry_res_t mod_reg = natus::format::global_t::registry() ;
+                    auto fitem1 = mod_reg->import_from( natus::io::location_t( "audio.bik.wav" ), _init_data.db ) ;
+                    auto fitem2 = mod_reg->import_from( natus::io::location_t( "audio.bok.wav" ), _init_data.db ) ;
+
+                    {
+                        natus::format::audio_item_res_t ii = fitem1.get() ;
+                        if( ii.is_valid() ) 
+                        {
+                            *b1 = *(ii->obj) ;
+                        }
+                    }
+
+                    {
+                        natus::format::audio_item_res_t ii = fitem2.get() ;
+                        if( ii.is_valid() ) 
+                        {
+                            *b2 = *(ii->obj) ;
+                        }
+                    }
+
+                    _paddle.comp.hit_sound = b1 ;
+                    _ball.comp.hit_sound = b2 ;
+
+                    _init_data.audio.configure( _paddle.comp.hit_sound ) ;
+                    _init_data.audio.configure( _ball.comp.hit_sound  ) ;
+
+                } ) ;
+                root->then( load_audio )->then( finish ) ;
 
                 return root ;
             }
@@ -627,6 +662,13 @@ namespace paddle_n_ball
                             }
                         }
                         else _ball.comp.adv = _ball.comp.adv * natus::math::vec2f_t( -1.0f, 1.0f ) ;
+
+                        {
+                            audio_queue_item item ;
+                            item.buffer = _paddle.comp.hit_sound ;
+                            item.eo = natus::audio::execution_options::play ;
+                            _audio_play_queue.emplace_back( item ) ;
+                        }
                     }
                 }
 
@@ -658,6 +700,13 @@ namespace paddle_n_ball
 
                             _score += 100 ;
 
+                            {
+                                audio_queue_item item ;
+                                item.buffer = _ball.comp.hit_sound ;
+                                item.eo = natus::audio::execution_options::play ;
+                                _audio_play_queue.emplace_back( item ) ;
+                            }
+
                             break ;
                         }
                     }
@@ -667,7 +716,14 @@ namespace paddle_n_ball
             //********************************************************************************
             void_t on_audio( natus::audio::async_access_t audio ) noexcept
             {
-                if( !_is_init ) return ;
+                for( auto & b : _audio_play_queue )
+                {
+                    natus::audio::backend::execute_detail ed ;
+                    ed.to = b.eo ;
+                    ed.loop = b.loop ;
+                    audio.execute( b.buffer, ed ) ;
+                }
+                _audio_play_queue.clear() ;
             }
 
             //********************************************************************************
@@ -743,7 +799,8 @@ namespace paddle_n_ball
                             natus::math::vec4f_t(1.0f) ) ;
                     }
 
-                    #if 1
+                    // this just tests smoothness of the rendering.
+                    #if 0
                     {
                         static float_t inter = 0.0f ;
                         float_t v = natus::math::interpolation<float_t>::linear( 0.0f, 1.0f, inter ) *2.0f-1.0f ;
@@ -757,8 +814,8 @@ namespace paddle_n_ball
                             sheet, _paddle.cur_sprite.pivot, 
                             natus::math::vec4f_t(1.0f) ) ;
 
-                        inter += (float_t( milli_dt ) / 1000.0f)*0.5f ;
-                        //inter += 0.016f*0.5f ;
+                        //inter += (float_t( milli_dt ) / 1000.0f)*0.5f ;
+                        inter += 0.016f*0.5f ;
                         if( inter > 1.0f ) inter = 0.0f ;
                     }
                     #endif
@@ -865,14 +922,18 @@ namespace paddle_n_ball
 
         the_game _game ;
 
+    private: // audio
+
+        natus::audio::async_access_t _audio ;
+
     public:
 
         game_app( void_t ) 
         {
             natus::application::app::window_info_t wi ;
             #if 1
-            auto view1 = this_t::create_window( "Template Application", wi ) ;
-            auto view2 = this_t::create_window( "Template Application", wi,
+            auto view1 = this_t::create_window( "Paddle'n'Ball", wi ) ;
+            auto view2 = this_t::create_window( "Paddle'n'Ball", wi,
                 { natus::graphics::backend_type::gl3, natus::graphics::backend_type::d3d11}) ;
 
             view1.window().position( 50, 50 ) ;
@@ -885,17 +946,18 @@ namespace paddle_n_ball
             //view1.window().vsync( false ) ;
             //view2.window().vsync( false ) ;
             #elif 0
-            auto view1 = this_t::create_window( "Template Application", wi, 
+            auto view1 = this_t::create_window( "Paddle'n'Ball", wi, 
                 { natus::graphics::backend_type::gl3, natus::graphics::backend_type::d3d11 } ) ;
             _graphics = natus::graphics::async_views_t( { view1.async() } ) ;
             #else
-            auto view1 = this_t::create_window( "Template Application", wi ) ;
+            auto view1 = this_t::create_window( "Paddle'n'Ball", wi ) ;
             _graphics = natus::graphics::async_views_t( { view1.async() } ) ;
             view1.window().vsync( true ) ;
             #endif
 
             _db = natus::io::database_t( natus::io::path_t( DATAPATH ), "./working", "data" ) ;
             _se = natus::tool::sprite_editor_res_t( natus::tool::sprite_editor_t( _db )  ) ;
+            _audio = this_t::create_audio_engine() ;
         }
         game_app( this_cref_t ) = delete ;
         game_app( this_rref_t rhv ) : app( ::std::move( rhv ) ) 
@@ -914,6 +976,8 @@ namespace paddle_n_ball
             _se = std::move( rhv._se ) ;
 
             _game = std::move( rhv._game ) ;
+
+            _audio = std::move( rhv._audio ) ;
         }
         virtual ~game_app( void_t ) 
         {}
@@ -1265,6 +1329,7 @@ namespace paddle_n_ball
                 the_game::init_data id ;
                 id.db = _db ;
                 id.sheets = _sheets ;
+                id.audio = _audio ;
 
                 natus::concurrent::global_t::schedule( _game.on_init( std::move( id ) ), 
                     natus::concurrent::schedule_type::loose ) ;
@@ -1453,7 +1518,7 @@ namespace paddle_n_ball
 
         virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) 
         { 
-            //NATUS_PROFILING_COUNTER_HERE( "Audio Clock" ) ;
+            _game.on_audio( _audio ) ;
             return natus::application::result::ok ; 
         }
 
