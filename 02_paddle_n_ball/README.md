@@ -15,7 +15,7 @@ XBox Ctrl : **left analog** | left and right
 ## application
 The physics are a little bit off. The reflection of the ball from the paddle depends on the hit region. The collision detection is not implemented right for the corners of the paddle as well as the bricks.
 
-Levels are loaded from the files in the 'layout' folder. A '.' means an empty space and a '#' means a brick.
+Levels are loaded from the files in the __layout__ folder. A '.' means an empty space and a '#' means a brick.
 
 ## key-issues
 This games' main purpose is to test the async task system. Loading all the assets is done using the new task system.
