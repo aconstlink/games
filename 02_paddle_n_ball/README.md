@@ -10,8 +10,8 @@ This game may look simple but there is acutally alot going on in the background!
 
 ## controls
 Keyboard : **a** | left / **d** | right
-XBox Ctrl : **left analog** | left and right
-Choose Level : **1-4**
+XBox Ctrl : **left analog** | left and right  
+Choose Level : **1-4**  
 
 ## application
 The physics are a little bit off. The reflection of the ball from the paddle depends on the hit region. The collision detection is not implemented right for the corners of the paddle as well as the bricks.
