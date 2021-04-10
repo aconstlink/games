@@ -19,7 +19,7 @@ The physics are a little bit off. The reflection of the ball from the paddle dep
 Levels are loaded from the files in the __layout__ folder. A '.' means an empty space and a '#' means a brick.
 
 ## key-issues
-This games' main purpose is to test the async task system. Loading all the assets is done using the new task system. Also the level are loaded using the task system if all bricks have been hit. 
+This games' main purpose is to test the async task system. Loading all the assets is done using the new task system. A level is loaded using the task system from the disk if all bricks have been hit. 
 
 ## further issues
 At the moment, there is a subtle stuttering in the continuous movement of everything. This issue was reduced due to using a "global" app wide delta time but it still remain. Especially for the OpenGL backend on windows.
