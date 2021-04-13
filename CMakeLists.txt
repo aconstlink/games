@@ -17,6 +17,7 @@ set( subdirs
     "00_empty_template"
     "01_space_intruders"
     "02_paddle_n_ball"
+    "03_tetrix"
     )
 
 foreach( _subdir ${subdirs} )
