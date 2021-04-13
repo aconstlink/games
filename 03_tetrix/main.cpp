@@ -174,6 +174,20 @@ namespace paddle_n_ball
 
             bricks_t _bricks ;
 
+            struct player
+            {
+                // L: 0
+                // Rect: 1
+                // l: 2
+                size_t shape = 0 ;
+
+                natus::math::vec2f_t adv ;
+                natus::math::vec2f_t adv2 ;
+            } ;
+            natus_typedefs( entity< player >, player ) ;
+            
+            player_t _player ;
+
         private: // audio
 
             struct audio_queue_item
@@ -215,6 +229,8 @@ namespace paddle_n_ball
 
                 natus::concurrent::task_res_t root = natus::concurrent::task_t( [&]( natus::concurrent::task_res_t )
                 {
+                    _player.pos = natus::math::vec2f_t( 0.0f, 800.0f ) ;
+                    _player.comp.adv = natus::math::vec2f_t( 0.0f, -80.0f ) ;
                 }) ;
 
                 natus::concurrent::task_res_t finish = natus::concurrent::task_t([&]( natus::concurrent::task_res_t )
@@ -239,6 +255,9 @@ namespace paddle_n_ball
             {
                 if( !_is_init ) return ;
 
+                natus::math::vec2f_t const game_space( 550.0f, 600.0f ) ;
+                natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
+
                 // move paddle
                 {
                     using ctrl_t = natus::device::layouts::game_controller_t ;
@@ -247,11 +266,11 @@ namespace paddle_n_ball
                     natus::math::vec2f_t value ;
                     if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::tilting, value ) )
                     {
-                        
+                        _player.comp.adv2 = natus::math::vec2f_t(250.0f) * value ;
                     }
-                    if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::untilted, value ) )
+                    else if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::untilted, value ) )
                     {
-                       
+                       _player.comp.adv2 = natus::math::vec2f_t( 0.0f, 0.0f ) ;
                     }
                 }
             }
@@ -268,6 +287,15 @@ namespace paddle_n_ball
                 if( !_is_init ) return ;
 
                 float_t const dt = (float_t(milli_dt) / 1000.0f) ;
+
+                natus::math::vec2f_t const game_space( 550.0f, 600.0f ) ;
+                natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
+                natus::math::vec2f_t const dims_h = dims * 0.5f ;
+
+                _player.pos += (_player.comp.adv + _player.comp.adv2)  * dt ;
+
+                natus::math::vec2f_t const cell = _player.pos / dims ;
+                
             }
 
             //********************************************************************************
@@ -287,11 +315,9 @@ namespace paddle_n_ball
             void_t on_graphics( natus::gfx::primitive_render_2d_res_t pr, size_t const milli_dt ) noexcept
             {
                 if( !_is_init ) return ;
-
                 
                 natus::math::vec2f_t const game_space( 550.0f, 600.0f ) ;
                 natus::math::vec2f_t const menu_space( 800.0f-game_space.x(), 600.0f ) ;
-                
 
                 // draw right
                 {
@@ -299,39 +325,54 @@ namespace paddle_n_ball
                         game_space * natus::math::vec2f_t( 1.0f, 0.0f ) ;
 
                     pr->draw_rect( 6, 
-                                pos + menu_space * natus::math::vec2f_t( -0.0f, -0.0f ), 
-                                pos + menu_space * natus::math::vec2f_t( -0.0f, +1.0f ), 
-                                pos + menu_space * natus::math::vec2f_t( +1.0f, +1.0f ), 
-                                pos + menu_space * natus::math::vec2f_t( +1.0f, -0.0f ),
-                                natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f),
-                                natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f)
-                            ) ;
+                        pos + menu_space * natus::math::vec2f_t( -0.0f, -0.0f ),
+                        pos + menu_space * natus::math::vec2f_t( -0.0f, +1.0f ),
+                        pos + menu_space * natus::math::vec2f_t( +1.0f, +1.0f ),
+                        pos + menu_space * natus::math::vec2f_t( +1.0f, -0.0f ),
+                        natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f),
+                        natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f)
+                    ) ;
                 }
 
                 // draw field
                 {
                     natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
-                    natus::math::vec2f_t const dims_h = dims * 0.5f ;
 
-                    natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) + dims_h ;
+                    natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) ;
 
                     for( size_t y=0; y<_level.h; ++y )
                     {
                         for( size_t x=0; x<_level.w; ++x )
                         {
                             pr->draw_rect( 5, 
-                                pos + dims_h * natus::math::vec2f_t( -1.0f, -1.0f ), 
-                                pos + dims_h * natus::math::vec2f_t( -1.0f, +1.0f ), 
-                                pos + dims_h * natus::math::vec2f_t( +1.0f, +1.0f ), 
-                                pos + dims_h * natus::math::vec2f_t( +1.0f, -1.0f ),
+                                pos + dims * natus::math::vec2f_t( -0.0f, -0.0f ),
+                                pos + dims * natus::math::vec2f_t( -0.0f, +1.0f ),
+                                pos + dims * natus::math::vec2f_t( +1.0f, +1.0f ),
+                                pos + dims * natus::math::vec2f_t( +1.0f, -0.0f ),
                                 natus::math::vec4f_t(0.9f, 0.9f, 0.9f, 1.0f),
                                 natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f)
                             ) ;
                             pos += natus::math::vec2f_t( dims.x(), 0.0f ) ;
                         }
-                        pos = natus::math::vec2f_t( -800.0f * 0.5f + dims_h.x(), pos.y() ) ;
+                        pos = natus::math::vec2f_t( -800.0f * 0.5f, pos.y() ) ;
                         pos += natus::math::vec2f_t( 0.0f, dims.y() ) ;
                     }
+                }
+
+                {
+                    natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
+                    natus::math::vec2f_t const cell = (_player.pos / dims).floored() ;
+
+                    natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) + cell * dims ;
+
+                    pr->draw_rect( 6, 
+                        pos + dims * natus::math::vec2f_t( -0.0f, -0.0f ),
+                        pos + dims * natus::math::vec2f_t( -0.0f, +1.0f ),
+                        pos + dims * natus::math::vec2f_t( +1.0f, +1.0f ),
+                        pos + dims * natus::math::vec2f_t( +1.0f, -0.0f ),
+                        natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f),
+                        natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f)
+                    ) ;
                 }
             }
 
