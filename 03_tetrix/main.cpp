@@ -151,17 +151,20 @@ namespace paddle_n_ball
             }
         };
 
-        private: // bricks
+        private: // 
 
             struct level
             {
-                size_t w = 40 ;
-                size_t h = 60 ;
+                size_t w = 20 ;
+                size_t h = 30 ;
 
                 natus::ntd::vector< size_t > layout ;
             };
             natus_typedef( level ) ;
             level_t _level ;
+
+            natus::math::vec2f_t _game_space = natus::math::vec2f_t( 550.0f, 600.0f ) ;
+            natus::math::vec2f_t _dims = natus::math::vec2f_t( _game_space.x() / float_t( _level.w ), _game_space.y() / float_t( _level.h ) ) ;
 
             struct brick
             {
@@ -176,17 +179,50 @@ namespace paddle_n_ball
 
             struct player
             {
-                // L: 0
-                // Rect: 1
-                // l: 2
-                size_t shape = 0 ;
-
                 natus::math::vec2f_t adv ;
                 natus::math::vec2f_t adv2 ;
+
+                size_t cur_shape = 0 ;
+                size_t shape_elems = 0 ;
+                std::array< natus::math::vec2f_t, 5 > shape ;
+
+                // 0 : L 0 x cw
+                // 1 : L 1 x cw
+                // 2 : L 2 x cw
+                // 3 : L 3 x cw
+                // 4 : rect
+                // 5 : |
+                // 5 : -
+                void_t set_shape( size_t const s, natus::math::vec2f_t pos, natus::math::vec2f_t dims ) noexcept
+                {
+                    cur_shape = s ;
+
+                    if( s == 0 )
+                    {
+                        shape_elems = 5 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( 1.0f, 0.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( 0.0f, 1.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( 0.0f, 2.0f ) ;
+                        shape[4] = pos + dims * natus::math::vec2f_t( 0.0f, 3.0f ) ;
+                    }
+                    else if( s == 1 )
+                    {
+                        shape_elems = 5 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( 0.0f, -1.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( 1.0f, 0.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( 2.0f, 0.0f ) ;
+                        shape[4] = pos + dims * natus::math::vec2f_t( 3.0f, 0.0f ) ;
+                    }
+                }
             } ;
             natus_typedefs( entity< player >, player ) ;
             
             player_t _player ;
+
+            
+            size_t _next_shape = 0 ;
 
         private: // audio
 
@@ -229,8 +265,16 @@ namespace paddle_n_ball
 
                 natus::concurrent::task_res_t root = natus::concurrent::task_t( [&]( natus::concurrent::task_res_t )
                 {
-                    _player.pos = natus::math::vec2f_t( 0.0f, 800.0f ) ;
-                    _player.comp.adv = natus::math::vec2f_t( 0.0f, -80.0f ) ;
+                    _player.pos = natus::math::vec2f_t( 0.0f, 600.0f ) ;
+                    _player.comp.adv = natus::math::vec2f_t( 0.0f, -100.0f ) ;
+                    _player.comp.set_shape( 0, _player.pos, _dims ) ;
+
+                    _level.layout.resize( _level.w * _level.h ) ;
+                    for( auto & i : _level.layout )
+                    {
+                        i = 0 ;
+                    }
+
                 }) ;
 
                 natus::concurrent::task_res_t finish = natus::concurrent::task_t([&]( natus::concurrent::task_res_t )
@@ -255,9 +299,6 @@ namespace paddle_n_ball
             {
                 if( !_is_init ) return ;
 
-                natus::math::vec2f_t const game_space( 550.0f, 600.0f ) ;
-                natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
-
                 // move paddle
                 {
                     using ctrl_t = natus::device::layouts::game_controller_t ;
@@ -266,7 +307,7 @@ namespace paddle_n_ball
                     natus::math::vec2f_t value ;
                     if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::tilting, value ) )
                     {
-                        _player.comp.adv2 = natus::math::vec2f_t(250.0f) * value ;
+                        _player.comp.adv2 = natus::math::vec2f_t(200.0f) * value ;
                     }
                     else if( ctrl.is( ctrl_t::directional::movement, natus::device::components::stick_state::untilted, value ) )
                     {
@@ -287,15 +328,143 @@ namespace paddle_n_ball
                 if( !_is_init ) return ;
 
                 float_t const dt = (float_t(milli_dt) / 1000.0f) ;
-
-                natus::math::vec2f_t const game_space( 550.0f, 600.0f ) ;
-                natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
-                natus::math::vec2f_t const dims_h = dims * 0.5f ;
-
-                _player.pos += (_player.comp.adv + _player.comp.adv2)  * dt ;
-
-                natus::math::vec2f_t const cell = _player.pos / dims ;
                 
+                player_t next ;
+                next.pos = _player.pos ;
+                next.comp.adv = _player.comp.adv ;
+                next.comp.adv2 = _player.comp.adv2 ;
+
+                // advance player
+                {
+                    next.pos += (next.comp.adv + next.comp.adv2) * dt ;
+
+                    natus::math::vec2f_t const pcell = (next.pos / _dims).floored() ;
+                    natus::math::vec2f_t const pos = pcell * _dims ;
+                    next.comp.set_shape( _player.comp.cur_shape, pos, _dims ) ; 
+                }
+                
+                // collision left right bottom
+                {
+                    natus::math::vec2f_t side_ground( 1.0f ) ;
+
+                    for( auto const p : next.comp.shape )
+                    {
+                        natus::math::vec2f_t const cell = (p / _dims).floored() ;
+                    
+                        if( cell.x() < 0.0f || cell.x() >= float_t(_level.w) )
+                        {
+                            side_ground.x( 0.0f ) ;
+                        }
+
+                        if( cell.y() < 0.0f )
+                        {
+                            side_ground.y( 0.0f ) ;
+                        }
+                    }
+
+                    // do correction
+                    {
+                        next.comp.adv *= side_ground ;
+                        next.comp.adv2 *= side_ground ;
+                        auto const adv = next.comp.adv + next.comp.adv2 ;
+                        next.pos = _player.pos + adv * dt ;
+                        next.comp.set_shape( _player.comp.cur_shape, next.pos, _dims ) ;
+                    }
+
+                    if( side_ground.y() < 0.5f )
+                    {
+                        for( auto const p : next.comp.shape )
+                        {
+                            natus::math::vec2f_t const cell = (p / _dims).floored() ;
+                            size_t const x = size_t( cell.x() ) ;
+                            size_t const y = size_t( cell.y() ) ;
+                            _level.layout[ y * _level.w + x ] = 1 ;
+                        }
+                        
+                        _player.pos = natus::math::vec2f_t( 200.0f, 600.0f ) ;
+                        _player.comp.set_shape( _player.comp.cur_shape, _player.pos, _dims ) ;
+                        return ;
+                    }
+                }
+
+                // test against the grid cells
+                {
+                    natus::math::vec2f_t side_ground( 1.0f ) ;
+
+                    // test side in grid
+                    {
+                        for( auto const p : next.comp.shape )
+                        {
+                            natus::math::vec2f_t const cell = (p/ _dims).floored() ;
+                            size_t const x = size_t( cell.x() ) ;
+                            size_t const y = size_t( cell.y() ) ;
+                        
+                            if( y >= _level.h ) continue ;
+
+                            if( _level.layout[y * _level.w + x] != 0 )
+                            {
+                                side_ground.x( 0.0f ) ;
+                                break ;
+                            }
+                        }
+
+                        // do correction
+                        {
+                            next.comp.adv *= side_ground ;
+                            next.comp.adv2 *= side_ground ;
+                            auto const adv = next.comp.adv + next.comp.adv2 ;
+                            next.pos = _player.pos + adv * dt ;
+                            next.comp.set_shape( _player.comp.cur_shape, next.pos, _dims ) ;
+                        }
+                    }
+
+                    // test hit in grid
+                    {
+                        for( auto const p : next.comp.shape )
+                        {
+                            natus::math::vec2f_t const cell = (p/ _dims).floored() ;
+                            size_t const x = size_t( cell.x() ) ;
+                            size_t const y = size_t( cell.y() ) ;
+                        
+                            if( y >= _level.h ) continue ;
+
+                            if( _level.layout[y * _level.w + x] != 0 )
+                            {
+                                side_ground.y( 0.0f ) ;
+                                break ;
+                            }
+                        }
+
+                        // do correction
+                        {
+                            next.comp.adv *= side_ground ;
+                            next.comp.adv2 *= side_ground ;
+                            auto const adv = next.comp.adv + next.comp.adv2 ;
+                            next.pos = _player.pos + adv * dt ;
+                            next.comp.set_shape( _player.comp.cur_shape, next.pos, _dims ) ;
+                        }
+
+                        if( side_ground.y() < 0.5f )
+                        {
+                            for( auto const p : next.comp.shape )
+                            {
+                                natus::math::vec2f_t const cell = (p / _dims).floored() ;
+                                size_t const x = size_t( cell.x() ) ;
+                                size_t const y = size_t( cell.y() ) ;
+                                _level.layout[ y * _level.w + x ] = 1 ;
+                            }
+                        
+                            _player.pos = natus::math::vec2f_t( 200.0f, 600.0f ) ;
+                            _player.comp.set_shape( _player.comp.cur_shape, _player.pos, _dims ) ;
+                            return ;
+                        }
+                    }
+                }
+
+                {
+                    _player.pos = next.pos ;
+                    _player.comp.set_shape( _player.comp.cur_shape, _player.pos, _dims ) ;
+                }
             }
 
             //********************************************************************************
@@ -336,43 +505,73 @@ namespace paddle_n_ball
 
                 // draw field
                 {
-                    natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
-
                     natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) ;
+
+                    natus::math::vec4f_t const colors[] = {
+                        natus::math::vec4f_t(0.9f, 0.9f, 0.9f, 1.0f),
+                        natus::math::vec4f_t(1.0f, 0.0f, .00f, 1.0f)
+                    } ;
+
+                    natus::math::vec4f_t const borders[] = {
+                        natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f),
+                        natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f)
+                    } ;
 
                     for( size_t y=0; y<_level.h; ++y )
                     {
                         for( size_t x=0; x<_level.w; ++x )
                         {
+                            size_t const i = y * _level.w + x ;
+
                             pr->draw_rect( 5, 
-                                pos + dims * natus::math::vec2f_t( -0.0f, -0.0f ),
-                                pos + dims * natus::math::vec2f_t( -0.0f, +1.0f ),
-                                pos + dims * natus::math::vec2f_t( +1.0f, +1.0f ),
-                                pos + dims * natus::math::vec2f_t( +1.0f, -0.0f ),
-                                natus::math::vec4f_t(0.9f, 0.9f, 0.9f, 1.0f),
-                                natus::math::vec4f_t(0.0f, 0.0f, 0.0f, 1.0f)
+                                pos + _dims * natus::math::vec2f_t( -0.0f, -0.0f ),
+                                pos + _dims * natus::math::vec2f_t( -0.0f, +1.0f ),
+                                pos + _dims * natus::math::vec2f_t( +1.0f, +1.0f ),
+                                pos + _dims * natus::math::vec2f_t( +1.0f, -0.0f ),
+                                colors[_level.layout[i]], borders[_level.layout[i]]
                             ) ;
-                            pos += natus::math::vec2f_t( dims.x(), 0.0f ) ;
+                            pos += natus::math::vec2f_t( _dims.x(), 0.0f ) ;
                         }
                         pos = natus::math::vec2f_t( -800.0f * 0.5f, pos.y() ) ;
-                        pos += natus::math::vec2f_t( 0.0f, dims.y() ) ;
+                        pos += natus::math::vec2f_t( 0.0f, _dims.y() ) ;
                     }
                 }
 
+                // draw player
                 {
-                    natus::math::vec2f_t const dims( game_space.x() / float_t( _level.w ), game_space.y() / float_t( _level.h ) ) ;
-                    natus::math::vec2f_t const cell = (_player.pos / dims).floored() ;
+                    #if 0
+                    natus::math::vec2f_t const cell = (_player.pos / _dims).floored() ;
+                    natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) + cell * _dims ;
+                    _player.comp.set_shape( _player.comp.cur_shape, pos, _dims ) ;
+                    #endif
 
-                    natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) + cell * dims ;
+                    #if 1
+                    for( size_t i=0; i<_player.comp.shape_elems; ++i )
+                    {
+                        natus::math::vec2f_t const pcell = (_player.comp.shape[i] / _dims).floored() ;
+                        natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) + pcell * _dims ;
+
+                        pr->draw_rect( 6, 
+                        pos + _dims * natus::math::vec2f_t( -0.0f, -0.0f ),
+                        pos + _dims * natus::math::vec2f_t( -0.0f, +1.0f ),
+                        pos + _dims * natus::math::vec2f_t( +1.0f, +1.0f ),
+                        pos + _dims * natus::math::vec2f_t( +1.0f, -0.0f ),
+                        natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f),
+                        natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f) ) ;
+                    }
+                    
+                    #else
 
                     pr->draw_rect( 6, 
-                        pos + dims * natus::math::vec2f_t( -0.0f, -0.0f ),
-                        pos + dims * natus::math::vec2f_t( -0.0f, +1.0f ),
-                        pos + dims * natus::math::vec2f_t( +1.0f, +1.0f ),
-                        pos + dims * natus::math::vec2f_t( +1.0f, -0.0f ),
+                        pos + _dims * natus::math::vec2f_t( -0.0f, -0.0f ),
+                        pos + _dims * natus::math::vec2f_t( -0.0f, +1.0f ),
+                        pos + _dims * natus::math::vec2f_t( +1.0f, +1.0f ),
+                        pos + _dims * natus::math::vec2f_t( +1.0f, -0.0f ),
                         natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f),
-                        natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f)
-                    ) ;
+                        natus::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f) ) ;
+
+                    #endif
+                    
                 }
             }
 
