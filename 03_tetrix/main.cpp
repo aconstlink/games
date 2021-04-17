@@ -155,15 +155,15 @@ namespace paddle_n_ball
 
             struct level
             {
-                size_t w = 20 ;
-                size_t h = 30 ;
+                size_t w = 40 ;
+                size_t h = 60 ;
 
                 natus::ntd::vector< size_t > layout ;
             };
             natus_typedef( level ) ;
             level_t _level ;
 
-            natus::math::vec2f_t _game_space = natus::math::vec2f_t( 550.0f, 600.0f ) ;
+            natus::math::vec2f_t _game_space = natus::math::vec2f_t( 800.0f, 600.0f ) ;
             natus::math::vec2f_t _dims = natus::math::vec2f_t( _game_space.x() / float_t( _level.w ), _game_space.y() / float_t( _level.h ) ) ;
 
             struct brick
@@ -182,7 +182,7 @@ namespace paddle_n_ball
                 natus::math::vec2f_t adv ;
                 natus::math::vec2f_t adv2 ;
 
-                size_t cur_shape = 0 ;
+                size_t cur_shape = 4 ;
                 size_t shape_elems = 0 ;
                 std::array< natus::math::vec2f_t, 5 > shape ;
 
@@ -192,7 +192,7 @@ namespace paddle_n_ball
                 // 3 : L 3 x cw
                 // 4 : rect
                 // 5 : |
-                // 5 : -
+                // 6 : -
                 void_t set_shape( size_t const s, natus::math::vec2f_t pos, natus::math::vec2f_t dims ) noexcept
                 {
                     cur_shape = s ;
@@ -214,6 +214,57 @@ namespace paddle_n_ball
                         shape[2] = pos + dims * natus::math::vec2f_t( 1.0f, 0.0f ) ;
                         shape[3] = pos + dims * natus::math::vec2f_t( 2.0f, 0.0f ) ;
                         shape[4] = pos + dims * natus::math::vec2f_t( 3.0f, 0.0f ) ;
+                    }
+                    else if( s == 2 )
+                    {
+                        shape_elems = 5 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( -1.0f, 0.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( 0.0f, -1.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( 0.0f, -2.0f ) ;
+                        shape[4] = pos + dims * natus::math::vec2f_t( 0.0f, -3.0f ) ;
+                    }
+                    else if( s == 3 )
+                    {
+                        shape_elems = 5 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( 0.0f, 1.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( -1.0f, 0.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( -2.0f, 0.0f ) ;
+                        shape[4] = pos + dims * natus::math::vec2f_t( -3.0f, 0.0f ) ;
+                    }
+                    else if( s == 4 )
+                    {
+                        shape_elems = 4 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( 0.0f, 1.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( 1.0f, 0.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( 1.0f, 1.0f ) ;
+                    }
+                    else if( s == 5 )
+                    {
+                        shape_elems = 4 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( 0.0f, 1.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( 0.0f, 2.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( 0.0f, 3.0f ) ;
+                    }
+                    else if( s == 6 )
+                    {
+                        shape_elems = 4 ;
+                        shape[0] = pos + dims * natus::math::vec2f_t( 0.0f, 0.0f ) ;
+                        shape[1] = pos + dims * natus::math::vec2f_t( 1.0f, 0.0f ) ;
+                        shape[2] = pos + dims * natus::math::vec2f_t( 2.0f, 0.0f ) ;
+                        shape[3] = pos + dims * natus::math::vec2f_t( 3.0f, 0.0f ) ;
+                    }
+                }
+
+                void_t rotate( size_t const lr ) noexcept
+                {
+                    if( cur_shape <= 3 )
+                    {
+                        cur_shape += lr == 0 ? -1 : 1 ;
+                        cur_shape %= 7 ;
                     }
                 }
             } ;
@@ -266,15 +317,14 @@ namespace paddle_n_ball
                 natus::concurrent::task_res_t root = natus::concurrent::task_t( [&]( natus::concurrent::task_res_t )
                 {
                     _player.pos = natus::math::vec2f_t( 0.0f, 600.0f ) ;
-                    _player.comp.adv = natus::math::vec2f_t( 0.0f, -100.0f ) ;
-                    _player.comp.set_shape( 0, _player.pos, _dims ) ;
+                    _player.comp.adv = natus::math::vec2f_t( 0.0f, -200.0f ) ;
+                    _player.comp.set_shape( _player.comp.cur_shape, _player.pos, _dims ) ;
 
                     _level.layout.resize( _level.w * _level.h ) ;
                     for( auto & i : _level.layout )
                     {
                         i = 0 ;
                     }
-
                 }) ;
 
                 natus::concurrent::task_res_t finish = natus::concurrent::task_t([&]( natus::concurrent::task_res_t )
@@ -313,6 +363,16 @@ namespace paddle_n_ball
                     {
                        _player.comp.adv2 = natus::math::vec2f_t( 0.0f, 0.0f ) ;
                     }
+
+                    float_t button_value ;
+                    if( ctrl.is( ctrl_t::button::action_a, natus::device::components::button_state::released, button_value ) )
+                    {
+                        _player.comp.rotate( 0 ) ;
+                    }
+                    else if( ctrl.is( ctrl_t::button::action_b, natus::device::components::button_state::released, button_value ) )
+                    {
+                        _player.comp.rotate( 1 ) ;
+                    }
                 }
             }
 
@@ -320,6 +380,30 @@ namespace paddle_n_ball
             void_t on_logic( size_t const milli_dt ) noexcept 
             {
                 if( !_is_init ) return ;
+
+                for( size_t y=0; y<_level.h; ++y )
+                {
+                    size_t c = 0 ;
+                    for( size_t x=0; x<_level.w; ++x )
+                    {
+                        if( _level.layout[ y * _level.w + x ] == 0 ) break ;
+                        ++c ;
+                    }
+
+                    // clear row
+                    if( c == _level.w ) 
+                    {
+                        size_t y1 = y ;
+                        for( size_t y2=y+1; y2<_level.h-1; ++y2, ++y1 )
+                        {
+                            for( size_t x=0; x<_level.w; ++x )
+                            {
+                                _level.layout[ y1 * _level.w + x ] = 
+                                    _level.layout[ y2 * _level.w + x ] ;
+                            }
+                        }
+                    }
+                }
             }
 
             //********************************************************************************
@@ -347,8 +431,10 @@ namespace paddle_n_ball
                 {
                     natus::math::vec2f_t side_ground( 1.0f ) ;
 
-                    for( auto const p : next.comp.shape )
+                    for( size_t i=0; i<next.comp.shape_elems; ++i )
                     {
+                        auto const p = next.comp.shape[i] ;
+
                         natus::math::vec2f_t const cell = (p / _dims).floored() ;
                     
                         if( cell.x() < 0.0f || cell.x() >= float_t(_level.w) )
@@ -373,8 +459,10 @@ namespace paddle_n_ball
 
                     if( side_ground.y() < 0.5f )
                     {
-                        for( auto const p : next.comp.shape )
+                        for( size_t i=0; i<next.comp.shape_elems; ++i )
                         {
+                            auto const p = next.comp.shape[i] ;
+
                             natus::math::vec2f_t const cell = (p / _dims).floored() ;
                             size_t const x = size_t( cell.x() ) ;
                             size_t const y = size_t( cell.y() ) ;
@@ -382,7 +470,7 @@ namespace paddle_n_ball
                         }
                         
                         _player.pos = natus::math::vec2f_t( 200.0f, 600.0f ) ;
-                        _player.comp.set_shape( _player.comp.cur_shape, _player.pos, _dims ) ;
+                        _player.comp.set_shape( ++_player.comp.cur_shape%5, _player.pos, _dims ) ;
                         return ;
                     }
                 }
@@ -393,8 +481,10 @@ namespace paddle_n_ball
 
                     // test side in grid
                     {
-                        for( auto const p : next.comp.shape )
+                        for( size_t i=0; i<next.comp.shape_elems; ++i )
                         {
+                            auto const p = next.comp.shape[i] ;
+
                             natus::math::vec2f_t const cell = (p/ _dims).floored() ;
                             size_t const x = size_t( cell.x() ) ;
                             size_t const y = size_t( cell.y() ) ;
@@ -420,8 +510,10 @@ namespace paddle_n_ball
 
                     // test hit in grid
                     {
-                        for( auto const p : next.comp.shape )
+                        for( size_t i=0; i<next.comp.shape_elems; ++i )
                         {
+                            auto const p = next.comp.shape[i] ;
+
                             natus::math::vec2f_t const cell = (p/ _dims).floored() ;
                             size_t const x = size_t( cell.x() ) ;
                             size_t const y = size_t( cell.y() ) ;
@@ -446,8 +538,9 @@ namespace paddle_n_ball
 
                         if( side_ground.y() < 0.5f )
                         {
-                            for( auto const p : next.comp.shape )
+                            for( size_t i=0; i<next.comp.shape_elems; ++i )
                             {
+                                auto const p = next.comp.shape[i] ;
                                 natus::math::vec2f_t const cell = (p / _dims).floored() ;
                                 size_t const x = size_t( cell.x() ) ;
                                 size_t const y = size_t( cell.y() ) ;
@@ -455,7 +548,7 @@ namespace paddle_n_ball
                             }
                         
                             _player.pos = natus::math::vec2f_t( 200.0f, 600.0f ) ;
-                            _player.comp.set_shape( _player.comp.cur_shape, _player.pos, _dims ) ;
+                            _player.comp.set_shape( ++_player.comp.cur_shape%5, _player.pos, _dims ) ;
                             return ;
                         }
                     }
@@ -485,13 +578,13 @@ namespace paddle_n_ball
             {
                 if( !_is_init ) return ;
                 
-                natus::math::vec2f_t const game_space( 550.0f, 600.0f ) ;
-                natus::math::vec2f_t const menu_space( 800.0f-game_space.x(), 600.0f ) ;
+                
+                natus::math::vec2f_t const menu_space( 800.0f-_game_space.x(), 600.0f ) ;
 
                 // draw right
                 {
                     natus::math::vec2f_t pos = natus::math::vec2f_t( 800.0f, 600.0f ) * natus::math::vec2f_t( -0.5f ) +
-                        game_space * natus::math::vec2f_t( 1.0f, 0.0f ) ;
+                        _game_space * natus::math::vec2f_t( 1.0f, 0.0f ) ;
 
                     pr->draw_rect( 6, 
                         pos + menu_space * natus::math::vec2f_t( -0.0f, -0.0f ),
@@ -1011,7 +1104,18 @@ namespace paddle_n_ball
                             natus::device::mapping_detail::negative_y ) ;
                         natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
                     }
-                
+                    
+                    {
+                        auto const res = m.insert( ica_t::action_a,
+                            b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::q ) ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
+
+                    {
+                        auto const res = m.insert( ica_t::action_b,
+                            b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::e ) ) ;
+                        natus::log::global_t::warning( natus::core::is_not( res ), "can not do mapping." ) ;
+                    }
 
                     _mappings.emplace_back( natus::memory::res<mapping_t>( m ) ) ;
                 }
