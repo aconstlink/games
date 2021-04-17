@@ -22,7 +22,7 @@ Levels are loaded from the files in the __layout__ folder. A '.' means an empty 
 This games' main purpose is to test the async task system. Loading all the assets is done using the new task system. A level is loaded using the task system from the disk if all bricks have been hit. 
 
 ## further issues
-At the moment, there is a subtle stuttering in the continuous movement of everything. This issue was reduced due to using a "global" app wide delta time but it still remain. Especially for the OpenGL backend on windows.
+At the moment, there is a subtle stuttering in the continuous movement of everything. This issue was reduced due to using a "global" app wide delta time but it still remains. Especially for the OpenGL backend on windows.
 
 ## conculsion
 As with the first game, everything works the same. 
