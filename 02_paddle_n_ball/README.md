@@ -1,5 +1,5 @@
 # space intruders
-This is a brakeout clone. 
+This is a break-out clone. 
 
 The main purpose of this game is to check certain engine features and not to fully clone the original game. Another important part of this game should be to start iterating towards a little and usable game framework. 
 
