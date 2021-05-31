@@ -118,7 +118,7 @@ namespace space_intruders
         virtual ~the_game( void_t ) 
         {}
 
-        virtual natus::application::result on_event( window_id_t const, this_t::window_event_info_in_t wei )
+        virtual natus::application::result on_event( window_id_t const, this_t::window_event_info_in_t wei ) noexcept
         {
             natus::math::vec2f_t const target = _screen_target ; 
             natus::math::vec2f_t const window = natus::math::vec2f_t( float_t(wei.w), float_t(wei.h) ) ;
@@ -135,7 +135,7 @@ namespace space_intruders
 
     private:
 
-        virtual natus::application::result on_init( void_t )
+        virtual natus::application::result on_init( void_t ) noexcept
         { 
             natus::device::global_t::system()->search( [&] ( natus::device::idevice_res_t dev_in )
             {
@@ -342,7 +342,7 @@ namespace space_intruders
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_device( natus::application::app_t::device_data_in_t ) 
+        virtual natus::application::result on_device( natus::application::app_t::device_data_in_t ) noexcept 
         {
             {
                 natus::device::layouts::ascii_keyboard_t ascii( _dev_ascii ) ;
@@ -365,13 +365,13 @@ namespace space_intruders
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_update( natus::application::app_t::update_data_in_t ) 
+        virtual natus::application::result on_update( natus::application::app_t::update_data_in_t ) noexcept 
         { 
             NATUS_PROFILING_COUNTER_HERE( "Update Clock" ) ;
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) 
+        virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) noexcept 
         { 
             NATUS_PROFILING_COUNTER_HERE( "Audio Clock" ) ;
             return natus::application::result::ok ; 
@@ -383,7 +383,7 @@ namespace space_intruders
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_graphics( natus::application::app_t::render_data_in_t ) 
+        virtual natus::application::result on_graphics( natus::application::app_t::render_data_in_t ) noexcept 
         { 
             {
                 _graphics.for_each( [&]( natus::graphics::async_view_t a )
@@ -477,7 +477,7 @@ namespace space_intruders
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_tool( natus::tool::imgui_view_t imgui )
+        virtual natus::application::result on_tool( natus::tool::imgui_view_t imgui ) noexcept
         {
             if( !_do_tool ) return natus::application::result::no_imgui ;
 
@@ -493,7 +493,7 @@ namespace space_intruders
             return natus::application::result::ok ;
         }
 
-        virtual natus::application::result on_shutdown( void_t ) 
+        virtual natus::application::result on_shutdown( void_t ) noexcept 
         { return natus::application::result::ok ; }
     };
     natus_res_typedef( the_game ) ;

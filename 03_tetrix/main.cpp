@@ -782,7 +782,7 @@ namespace paddle_n_ball
         virtual ~game_app( void_t ) 
         {}
 
-        virtual natus::application::result on_event( window_id_t const, this_t::window_event_info_in_t wei )
+        virtual natus::application::result on_event( window_id_t const, this_t::window_event_info_in_t wei ) noexcept
         {
             natus::math::vec2f_t const target = _screen_target ; 
             natus::math::vec2f_t const window = natus::math::vec2f_t( float_t(wei.w), float_t(wei.h) ) ;
@@ -819,7 +819,7 @@ namespace paddle_n_ball
 
     private:
 
-        virtual natus::application::result on_init( void_t )
+        virtual natus::application::result on_init( void_t ) noexcept
         { 
             natus::device::global_t::system()->search( [&] ( natus::device::idevice_res_t dev_in )
             {
@@ -1143,7 +1143,7 @@ namespace paddle_n_ball
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_device( natus::application::app_t::device_data_in_t ) 
+        virtual natus::application::result on_device( natus::application::app_t::device_data_in_t ) noexcept 
         {
             _game_dev->update() ;
             for( auto & m : _mappings )
@@ -1182,13 +1182,13 @@ namespace paddle_n_ball
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_update( natus::application::app_t::update_data_in_t ) 
+        virtual natus::application::result on_update( natus::application::app_t::update_data_in_t ) noexcept 
         { 
             //NATUS_PROFILING_COUNTER_HERE( "Update Clock" ) ;
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) 
+        virtual natus::application::result on_audio( natus::application::app_t::audio_data_in_t ) noexcept 
         { 
             _game.on_audio( _audio ) ;
             return natus::application::result::ok ; 
@@ -1202,7 +1202,7 @@ namespace paddle_n_ball
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_graphics( natus::application::app_t::render_data_in_t rdi ) 
+        virtual natus::application::result on_graphics( natus::application::app_t::render_data_in_t rdi ) noexcept 
         { 
             //natus::log::global_t::status( "graphics: " + std::to_string( rdi.micro_dt ) ) ;
 
@@ -1299,7 +1299,7 @@ namespace paddle_n_ball
             return natus::application::result::ok ; 
         }
 
-        virtual natus::application::result on_tool( natus::tool::imgui_view_t imgui )
+        virtual natus::application::result on_tool( natus::tool::imgui_view_t imgui ) noexcept
         {
             if( !_do_tool ) return natus::application::result::no_imgui ;
 
@@ -1317,7 +1317,7 @@ namespace paddle_n_ball
             return natus::application::result::ok ;
         }
 
-        virtual natus::application::result on_shutdown( void_t ) 
+        virtual natus::application::result on_shutdown( void_t ) noexcept 
         { return natus::application::result::ok ; }
     };
     natus_res_typedef( game_app ) ;
