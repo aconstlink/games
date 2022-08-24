@@ -23,7 +23,7 @@
 #include <natus/gfx/util/quad.h>
 
 #include <natus/graphics/variable/variable_set.hpp>
-#include <natus/profiling/macros.h>
+#include <natus/profile/macros.h>
 
 #include <natus/concurrent/global.h>
 
@@ -791,8 +791,10 @@ namespace paddle_n_ball
             _ratio = ratio ;
             _screen_current = target * (ratio.x() < ratio.y() ? ratio.xx() : ratio.yy()) ;
 
-            _camera_0.orthographic( target.x(), target.y(), 0.1f, 1000.0f ) ;
-            _camera_1.orthographic( window.x(), window.y(), 0.1f, 1000.0f ) ;
+            _camera_0.set_dims( target.x(), target.y(), 0.1f, 1000.0f ) ;
+            _camera_1.set_dims( window.x(), window.y(), 0.1f, 1000.0f ) ;
+            _camera_0.orthographic(  ) ;
+            _camera_1.orthographic( ) ;
 
             #if 1
             _fb->set_target( natus::graphics::color_target_type::rgba_uint_8, 1 )
@@ -983,8 +985,8 @@ namespace paddle_n_ball
             // prepare quad
             {
                 _quad = natus::gfx::quad_res_t( natus::gfx::quad_t("post_map") ) ;
-                _quad->set_texture("the_scene.0") ;
                 _quad->init( _graphics ) ;
+                _quad->set_texture("the_scene.0") ;
             }
 
             {
